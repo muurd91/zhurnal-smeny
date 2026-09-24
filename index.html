@@ -121,6 +121,35 @@
     left: 0;
     color: var(--accent);
   }
+
+  form {
+    display: grid;
+    gap: 16px;
+    max-width: 420px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  input {
+    width: 100%;
+    background: var(--bg-panel);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+  input:focus,
+  .btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 </style>
 </head>
 <body>
@@ -155,6 +184,50 @@
       <li>Список причин простоя не придуман заранее — он вырастает из того, что реально записывают.</li>
     </ul>
   </section>
+
+  <section id="cta">
+    <h2>Хотите попробовать на своей смене?</h2>
+    <p>Оставьте, как с вами связаться — вышлю минимальную версию, когда она будет готова к показу.</p>
+    <form id="contact-form">
+      <div>
+        <label for="cta-name">Имя</label>
+        <input id="cta-name" name="name" type="text" required>
+      </div>
+      <div>
+        <label for="cta-contact">Как связаться (телефон, telegram, почта)</label>
+        <input id="cta-contact" name="contact" type="text" required>
+      </div>
+      <button type="submit" class="btn">Оставить контакт</button>
+    </form>
+  </section>
 </main>
+<script>
+(function () {
+  var TARGET_EMAIL = 'myrdoc911@gmail.com';
+
+  function buildMailtoHref(name, contact) {
+    var subject = encodeURIComponent('Журнал смены — хочу попробовать');
+    var body = encodeURIComponent('Имя: ' + name + '\nКак связаться: ' + contact);
+    return 'mailto:' + TARGET_EMAIL + '?subject=' + subject + '&body=' + body;
+  }
+
+  window.buildMailtoHref = buildMailtoHref;
+
+  var form = document.getElementById('contact-form');
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var name = document.getElementById('cta-name').value.trim();
+    var contact = document.getElementById('cta-contact').value.trim();
+
+    if (!name || !contact) {
+      var emptyField = !name ? document.getElementById('cta-name') : document.getElementById('cta-contact');
+      emptyField.focus();
+      return;
+    }
+
+    window.location.href = buildMailtoHref(name, contact);
+  });
+})();
+</script>
 </body>
 </html>
