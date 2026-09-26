@@ -96,7 +96,7 @@
     section { padding: 40px 0; }
   }
 
-  .zone-text-panel + .zone-text-panel {
+  #zone-downtime h2:not(:first-child) {
     margin-top: 40px;
   }
 
@@ -212,52 +212,6 @@
     .zone-photo img {
       max-height: 70vh;
     }
-
-    /* ZONE 2 — the whole photo+text row is pinned to the viewport
-       (position: sticky) while the outer track scrolls underneath it;
-       only one text panel is ever shown at a time (stacked exactly on
-       top of each other via absolute positioning), switched by a scroll
-       listener as the track scrolls past. Track height controls how much
-       scrolling each switch costs, independent of the panels' own size —
-       unlike stacking real-height panels in normal flow, which let the
-       next one peek in before its turn. Excluded from the generic
-       whole-zone fade above: taller than one viewport, its own
-       intersection ratio would never reach 1. */
-    #zone-downtime.zone {
-      opacity: 1;
-    }
-
-    #zone-downtime .zone-pin-track {
-      position: relative;
-      width: 100%;
-      height: 190vh;
-    }
-
-    #zone-downtime .zone-pin-sticky {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-
-    #zone-downtime .zone-text-stack {
-      position: relative;
-      height: 100%;
-    }
-
-    #zone-downtime .zone-text-panel {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.35s ease;
-      margin-top: 0;
-    }
-
-    #zone-downtime .zone-text-panel.is-visible {
-      opacity: 1;
-    }
   }
 </style>
 </head>
@@ -278,29 +232,23 @@
   </section>
 
   <section class="zone" id="zone-downtime">
-    <div class="zone-pin-track">
-      <div class="zone-pin-sticky zone-inner zone-inner--wide zone-grid">
-        <div class="zone-text-stack">
-          <div class="zone-text-panel is-visible">
-            <h2>Простои — вы вообще где-то их записываете?</h2>
-            <p class="lead">Часто ведётся только журнал объёма продукции. Что стояло, почему и на сколько — теряется за смену и всплывает, только когда кто-то спросит «а что случилось на прошлой неделе».</p>
-          </div>
-          <div class="zone-text-panel">
-            <h2>Как это работает</h2>
-            <p>Три касания на планшете: какое оборудование, что случилось, износ это или человеческий фактор — и сколько длилось. Запись постфактум, одним заходом.</p>
-          </div>
-          <div class="zone-text-panel">
-            <h2>Почему это устойчиво</h2>
-            <ul class="why-list">
-              <li>Один планшет на смену — не телефон в кармане у каждого.</li>
-              <li>Данные остаются на месте: без облака, без аккаунтов и согласований с ИТ.</li>
-              <li>Список причин простоя не придуман заранее — вырастает из того, что реально записывают.</li>
-            </ul>
-          </div>
-        </div>
-        <div class="zone-photo">
-          <img src="images/planshet.jpg" alt="Мастер отмечает событие в журнале смены на планшете" width="800" height="1200" loading="lazy">
-        </div>
+    <div class="zone-inner zone-inner--wide zone-grid">
+      <div class="zone-text">
+        <h2>Простои — вы вообще где-то их записываете?</h2>
+        <p class="lead">Часто ведётся только журнал объёма продукции. Что стояло, почему и на сколько — теряется за смену и всплывает, только когда кто-то спросит «а что случилось на прошлой неделе».</p>
+
+        <h2>Как это работает</h2>
+        <p>Три касания на планшете: какое оборудование, что случилось, износ это или человеческий фактор — и сколько длилось. Запись постфактум, одним заходом.</p>
+
+        <h2>Почему это устойчиво</h2>
+        <ul class="why-list">
+          <li>Один планшет на смену — не телефон в кармане у каждого.</li>
+          <li>Данные остаются на месте: без облака, без аккаунтов и согласований с ИТ.</li>
+          <li>Список причин простоя не придуман заранее — вырастает из того, что реально записывают.</li>
+        </ul>
+      </div>
+      <div class="zone-photo">
+        <img src="images/planshet.jpg" alt="Мастер отмечает событие в журнале смены на планшете" width="800" height="1200" loading="lazy">
       </div>
     </div>
   </section>
@@ -353,7 +301,7 @@
 })();
 
 (function () {
-  var targets = document.querySelectorAll('.zone:not(#zone-downtime)');
+  var targets = document.querySelectorAll('.zone');
   var desktopQuery = window.matchMedia('(min-width: 781px)');
 
   if (!('IntersectionObserver' in window)) {
@@ -381,50 +329,6 @@
       targets.forEach(function (el) { el.style.opacity = ''; });
     }
   });
-})();
-
-(function () {
-  // Zone 2's text panels are stacked exactly on top of each other
-  // (absolute positioning) so only the active one is ever visible — this
-  // switches which one that is, based on how far the reader has scrolled
-  // through the pin track, not on each panel's own visibility ratio
-  // (they all occupy the same box, so IntersectionObserver can't tell
-  // them apart).
-  var track = document.querySelector('#zone-downtime .zone-pin-track');
-  var panels = document.querySelectorAll('#zone-downtime .zone-text-panel');
-  if (!track || !panels.length) return;
-
-  var desktopQuery = window.matchMedia('(min-width: 781px)');
-  var ticking = false;
-
-  function update() {
-    ticking = false;
-
-    if (!desktopQuery.matches) {
-      panels.forEach(function (panel) { panel.classList.remove('is-visible'); });
-      return;
-    }
-
-    var rect = track.getBoundingClientRect();
-    var stickyRange = rect.height - window.innerHeight;
-    var progress = stickyRange > 0 ? (-rect.top) / stickyRange : 0;
-    progress = Math.min(1, Math.max(0, progress));
-
-    var index = Math.min(panels.length - 1, Math.floor(progress * panels.length));
-    panels.forEach(function (panel, i) {
-      panel.classList.toggle('is-visible', i === index);
-    });
-  }
-
-  function onScroll() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  }
-
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
-  update();
 })();
 </script>
 </body>
