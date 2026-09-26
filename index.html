@@ -99,7 +99,9 @@
     section { padding: 40px 0; }
   }
 
-  #zone-downtime h2:not(:first-child) { margin-top: 40px; }
+  .zone-text-panel + .zone-text-panel {
+    margin-top: 40px;
+  }
 
   .why-list {
     list-style: none;
@@ -160,6 +162,10 @@
     outline-offset: 2px;
   }
 
+  .cta-fallback {
+    margin-top: 20px;
+  }
+
   /* ZONE PHOTOS — framed, rounded corners, same treatment on both zones */
   .zone-photo {
     margin: 24px 0 0;
@@ -209,6 +215,44 @@
     .zone-photo img {
       max-height: 70vh;
     }
+
+    /* ZONE 2 — the photo stays pinned to the viewport (position: sticky)
+       while its three text panels scroll past beside it, each one its
+       own snap point and its own fade. Excluded from the generic
+       whole-zone fade above: at 300vh tall its own intersection ratio
+       would never reach 1, so each panel is faded individually instead. */
+    #zone-downtime.zone {
+      opacity: 1;
+    }
+
+    #zone-downtime .zone-photo {
+      align-self: start;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+
+    #zone-downtime .zone-text-stack {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #zone-downtime .zone-text-panel {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      scroll-snap-align: start;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      margin-top: 0;
+    }
+
+    #zone-downtime .zone-text-panel.is-visible {
+      opacity: 1;
+    }
   }
 </style>
 </head>
@@ -230,19 +274,23 @@
 
   <section class="zone" id="zone-downtime">
     <div class="zone-inner zone-inner--wide zone-grid">
-      <div class="zone-text">
-        <h2>Простои — вы вообще где-то их записываете?</h2>
-        <p class="lead">Часто ведётся только журнал объёма продукции. Что стояло, почему и на сколько — теряется за смену и всплывает, только когда кто-то спросит «а что случилось на прошлой неделе».</p>
-
-        <h2>Как это работает</h2>
-        <p>Три касания на планшете: какое оборудование, что случилось, износ это или человеческий фактор — и сколько длилось. Запись постфактум, одним заходом.</p>
-
-        <h2>Почему это устойчиво</h2>
-        <ul class="why-list">
-          <li>Один планшет на смену — не телефон в кармане у каждого.</li>
-          <li>Данные остаются на месте: без облака, без аккаунтов и согласований с ИТ.</li>
-          <li>Список причин простоя не придуман заранее — вырастает из того, что реально записывают.</li>
-        </ul>
+      <div class="zone-text-stack">
+        <div class="zone-text-panel">
+          <h2>Простои — вы вообще где-то их записываете?</h2>
+          <p class="lead">Часто ведётся только журнал объёма продукции. Что стояло, почему и на сколько — теряется за смену и всплывает, только когда кто-то спросит «а что случилось на прошлой неделе».</p>
+        </div>
+        <div class="zone-text-panel">
+          <h2>Как это работает</h2>
+          <p>Три касания на планшете: какое оборудование, что случилось, износ это или человеческий фактор — и сколько длилось. Запись постфактум, одним заходом.</p>
+        </div>
+        <div class="zone-text-panel">
+          <h2>Почему это устойчиво</h2>
+          <ul class="why-list">
+            <li>Один планшет на смену — не телефон в кармане у каждого.</li>
+            <li>Данные остаются на месте: без облака, без аккаунтов и согласований с ИТ.</li>
+            <li>Список причин простоя не придуман заранее — вырастает из того, что реально записывают.</li>
+          </ul>
+        </div>
       </div>
       <div class="zone-photo">
         <img src="images/planshet.jpg" alt="Мастер отмечает событие в журнале смены на планшете" width="800" height="1200" loading="lazy">
@@ -265,7 +313,7 @@
         </div>
         <button type="submit" class="btn">Оставить контакт</button>
       </form>
-      <p>Если письмо не открылось — напишите на <a href="mailto:myrdoc911@gmail.com">myrdoc911@gmail.com</a>.</p>
+      <p class="cta-fallback">Если письмо не открылось — напишите на <a href="mailto:myrdoc911@gmail.com">myrdoc911@gmail.com</a>.</p>
     </div>
   </section>
 </main>
@@ -298,10 +346,11 @@
 })();
 
 (function () {
-  var zones = document.querySelectorAll('.zone');
+  var targets = document.querySelectorAll('.zone:not(#zone-downtime), #zone-downtime .zone-text-panel');
+  var desktopQuery = window.matchMedia('(min-width: 781px)');
 
   if (!('IntersectionObserver' in window)) {
-    zones.forEach(function (zone) { zone.classList.add('is-visible'); });
+    targets.forEach(function (el) { el.classList.add('is-visible'); });
     return;
   }
 
@@ -310,11 +359,21 @@
 
   var observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
-      entry.target.style.opacity = entry.intersectionRatio;
+      // Inline opacity beats any stylesheet rule regardless of viewport,
+      // so this must only ever be set while the desktop layout is active —
+      // otherwise it would silently fade content on mobile too, where the
+      // opacity:0 base rule doesn't exist to justify it.
+      entry.target.style.opacity = desktopQuery.matches ? entry.intersectionRatio : '';
     });
   }, { threshold: thresholds });
 
-  zones.forEach(function (zone) { observer.observe(zone); });
+  targets.forEach(function (el) { observer.observe(el); });
+
+  desktopQuery.addEventListener('change', function () {
+    if (!desktopQuery.matches) {
+      targets.forEach(function (el) { el.style.opacity = ''; });
+    }
+  });
 })();
 </script>
 </body>
