@@ -214,10 +214,11 @@
     }
 
     /* ZONE 2 — the photo stays pinned to the viewport (position: sticky)
-       while its three text panels scroll past beside it, each one its
-       own snap point and its own fade. Excluded from the generic
-       whole-zone fade above: at 300vh tall its own intersection ratio
-       would never reach 1, so each panel is faded individually instead. */
+       while its three text panels scroll past beside it, each with its
+       own fade (no snap-align on the panels themselves — see the fix
+       commits above for why). Excluded from the generic whole-zone fade
+       above: taller than one viewport, its own intersection ratio would
+       never reach 1, so each panel is faded individually instead. */
     #zone-downtime.zone {
       opacity: 1;
     }
@@ -237,7 +238,7 @@
     }
 
     #zone-downtime .zone-text-panel {
-      min-height: 100vh;
+      min-height: 55vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
