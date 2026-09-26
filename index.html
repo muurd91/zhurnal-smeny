@@ -16,6 +16,7 @@
     --accent-text: #14181c;
     --radius: 12px;
     --max-w: 720px;
+    --max-w-wide: 1100px;
   }
 
   * { box-sizing: border-box; }
@@ -29,9 +30,17 @@
   }
 
   main.page {
+    width: 100%;
+  }
+
+  .zone-inner {
     max-width: var(--max-w);
     margin: 0 auto;
     padding: 0 20px;
+  }
+
+  .zone-inner--wide {
+    max-width: var(--max-w-wide);
   }
 
   section {
@@ -102,7 +111,7 @@
   .steps-diagram .step-num { fill: var(--text); font-size: 34px; font-weight: 700; text-anchor: middle; }
   .steps-diagram .step-label { fill: var(--text-muted); font-size: 24px; text-anchor: middle; }
 
-  #solution h2:not(:first-child) { margin-top: 40px; }
+  #zone-downtime h2:not(:first-child) { margin-top: 40px; }
 
   .why-list {
     list-style: none;
@@ -153,56 +162,127 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+
+  /* ZONE PHOTOS — framed, rounded corners, same treatment on both zones */
+  .zone-photo {
+    margin: 24px 0 0;
+  }
+
+  .zone-photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    object-fit: cover;
+  }
+
+  /* DESKTOP/TABLET (≥781px, same breakpoint as Persona) — full-height slides
+     with scroll-snap and a fade transition; text+photo side by side. */
+  @media (min-width: 781px) {
+    html {
+      scroll-snap-type: y mandatory;
+    }
+
+    .zone {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      scroll-snap-align: start;
+    }
+
+    .zone.is-visible {
+      opacity: 1;
+    }
+
+    .zone-inner--wide.zone-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .zone-photo {
+      margin: 0;
+    }
+
+    .zone-photo img {
+      max-height: 70vh;
+    }
+  }
 </style>
 </head>
 <body>
 <main class="page">
-  <section id="hero">
-    <p class="eyebrow">Журнал смены</p>
-    <h1>Простои — вы вообще где-то их записываете?</h1>
-    <p class="lead">Часто ведётся только один журнал — объёма продукции. Что стояло, почему и сколько времени — теряется в течение смены и не всплывает, пока кто-то не спросит «а что случилось на прошлой неделе». Журнал смены закрывает это одним планшетом в центре цеха.</p>
+  <section class="zone" id="zone-breakdowns">
+    <div class="zone-inner zone-inner--wide zone-grid">
+      <div class="zone-text">
+        <p class="eyebrow">Журнал смены</p>
+        <h1>Поломки на производстве — не редкость</h1>
+        <p class="lead">Станок встал, и полдня непонятно почему — так проходит смена за сменой на любом производстве. Где-то это износ детали, где-то ошибка оператора, где-то просто разболтался крепёж. Поломки — это не ЧП, это фон, с которым работает каждая смена.</p>
+        <p>Проблема не в самих поломках — они будут всегда. Проблема в том, что через неделю никто не вспомнит, какой узел ломается чаще других и сколько смен на этом потеряно.</p>
+      </div>
+      <div class="zone-photo">
+        <img src="images/polomka.jpg" alt="Мастер осматривает неисправность на производственной линии" width="800" height="1200" loading="lazy">
+      </div>
+    </div>
   </section>
 
-  <section id="solution">
-    <h2>Как это работает</h2>
-    <svg viewBox="0 0 600 180" role="img" aria-label="Три касания: оборудование, что случилось, износ или человек и длительность" class="steps-diagram">
-      <line class="step-line" x1="100" y1="65" x2="300" y2="65"/>
-      <line class="step-line" x1="300" y1="65" x2="500" y2="65"/>
-      <circle class="step-circle" cx="100" cy="65" r="36"/>
-      <circle class="step-circle" cx="300" cy="65" r="36"/>
-      <circle class="step-circle" cx="500" cy="65" r="36"/>
-      <text class="step-num" x="100" y="77">1</text>
-      <text class="step-num" x="300" y="77">2</text>
-      <text class="step-num" x="500" y="77">3</text>
-      <text class="step-label" x="100" y="135">оборудование</text>
-      <text class="step-label" x="300" y="135">что случилось</text>
-      <text class="step-label" x="500" y="135"><tspan x="500" dy="0">износ / человек</tspan><tspan x="500" dy="20">+ время</tspan></text>
-    </svg>
-    <p>Одно событие — три касания на планшете. Мастер отмечает, какая единица оборудования, что случилось, и износ это или человеческий фактор, плюс сколько длилось. Запись постфактум, одним заходом — разбираться посреди смены некогда.</p>
+  <section class="zone" id="zone-downtime">
+    <div class="zone-inner zone-inner--wide zone-grid">
+      <div class="zone-text">
+        <h2>Простои — вы вообще где-то их записываете?</h2>
+        <p class="lead">Часто ведётся только один журнал — объёма продукции. Что стояло, почему и сколько времени — теряется в течение смены и не всплывает, пока кто-то не спросит «а что случилось на прошлой неделе». Журнал смены закрывает это одним планшетом в центре цеха.</p>
 
-    <h2>Почему это устойчиво</h2>
-    <ul class="why-list">
-      <li>Один планшет в центре цеха — если участки стоят в одном зале, хватает одного устройства на всех, а не телефона в кармане у каждого.</li>
-      <li>Данные остаются на планшете. Без облака, без аккаунтов и согласований с ИТ.</li>
-      <li>Список причин простоя не придуман заранее — он вырастает из того, что реально записывают.</li>
-    </ul>
+        <h2>Как это работает</h2>
+        <svg viewBox="0 0 600 180" role="img" aria-label="Три касания: оборудование, что случилось, износ или человек и длительность" class="steps-diagram">
+          <line class="step-line" x1="100" y1="65" x2="300" y2="65"/>
+          <line class="step-line" x1="300" y1="65" x2="500" y2="65"/>
+          <circle class="step-circle" cx="100" cy="65" r="36"/>
+          <circle class="step-circle" cx="300" cy="65" r="36"/>
+          <circle class="step-circle" cx="500" cy="65" r="36"/>
+          <text class="step-num" x="100" y="77">1</text>
+          <text class="step-num" x="300" y="77">2</text>
+          <text class="step-num" x="500" y="77">3</text>
+          <text class="step-label" x="100" y="135">оборудование</text>
+          <text class="step-label" x="300" y="135">что случилось</text>
+          <text class="step-label" x="500" y="135"><tspan x="500" dy="0">износ / человек</tspan><tspan x="500" dy="20">+ время</tspan></text>
+        </svg>
+        <p>Одно событие — три касания на планшете. Мастер отмечает, какая единица оборудования, что случилось, и износ это или человеческий фактор, плюс сколько длилось. Запись постфактум, одним заходом — разбираться посреди смены некогда.</p>
+
+        <h2>Почему это устойчиво</h2>
+        <ul class="why-list">
+          <li>Один планшет в центре цеха — если участки стоят в одном зале, хватает одного устройства на всех, а не телефона в кармане у каждого.</li>
+          <li>Данные остаются на планшете. Без облака, без аккаунтов и согласований с ИТ.</li>
+          <li>Список причин простоя не придуман заранее — он вырастает из того, что реально записывают.</li>
+        </ul>
+      </div>
+      <div class="zone-photo">
+        <img src="images/planshet.jpg" alt="Мастер отмечает событие в журнале смены на планшете" width="800" height="1200" loading="lazy">
+      </div>
+    </div>
   </section>
 
-  <section id="cta">
-    <h2>Хотите попробовать на своей смене?</h2>
-    <p>Оставьте, как с вами связаться — вышлю минимальную версию, когда она будет готова к показу.</p>
-    <form id="contact-form">
-      <div>
-        <label for="cta-name">Имя</label>
-        <input id="cta-name" name="name" type="text" required>
-      </div>
-      <div>
-        <label for="cta-contact">Как связаться (телефон, telegram, почта)</label>
-        <input id="cta-contact" name="contact" type="text" required>
-      </div>
-      <button type="submit" class="btn">Оставить контакт</button>
-    </form>
-    <p>Если письмо не открылось — напишите на <a href="mailto:myrdoc911@gmail.com">myrdoc911@gmail.com</a>.</p>
+  <section class="zone" id="zone-cta">
+    <div class="zone-inner">
+      <h2>Хотите попробовать на своей смене?</h2>
+      <p>Оставьте, как с вами связаться — вышлю минимальную версию, когда она будет готова к показу.</p>
+      <form id="contact-form">
+        <div>
+          <label for="cta-name">Имя</label>
+          <input id="cta-name" name="name" type="text" required>
+        </div>
+        <div>
+          <label for="cta-contact">Как связаться (телефон, telegram, почта)</label>
+          <input id="cta-contact" name="contact" type="text" required>
+        </div>
+        <button type="submit" class="btn">Оставить контакт</button>
+      </form>
+      <p>Если письмо не открылось — напишите на <a href="mailto:myrdoc911@gmail.com">myrdoc911@gmail.com</a>.</p>
+    </div>
   </section>
 </main>
 <script>
@@ -231,6 +311,23 @@
 
     window.location.href = buildMailtoHref(name, contact);
   });
+})();
+
+(function () {
+  var zones = document.querySelectorAll('.zone');
+
+  if (!('IntersectionObserver' in window)) {
+    zones.forEach(function (zone) { zone.classList.add('is-visible'); });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      entry.target.classList.toggle('is-visible', entry.isIntersecting);
+    });
+  }, { threshold: 0.35 });
+
+  zones.forEach(function (zone) { observer.observe(zone); });
 })();
 </script>
 </body>
