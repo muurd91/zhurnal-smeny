@@ -19,7 +19,7 @@
     --radius: 12px;
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   body {
     margin: 0;
@@ -57,6 +57,9 @@
   .app {
     max-width: 640px;
     margin: 0 auto;
+  }
+
+  #screen-main {
     padding: 24px 20px 48px;
   }
 
@@ -94,6 +97,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 24px 20px;
   }
 
   .center-wrap .card { max-width: 460px; width: 100%; }
@@ -419,18 +423,16 @@
   <button type="button" id="end-shift-btn" class="btn btn-danger btn-small top-end-btn">Закончить смену</button>
 </div>
 
-<div class="app">
+<section id="screen-start" class="center-wrap">
+  <div class="card">
+    <p class="eyebrow">Демо</p>
+    <h1>Начать смену</h1>
+    <p class="lead">Заполни данные смены, отмечай поломки прямо во время работы и смотри историю и состояние оборудования.</p>
+    <button type="button" id="start-shift-btn" class="btn">Начать смену</button>
+  </div>
+</section>
 
-  <section id="screen-start" class="center-wrap">
-    <div class="card">
-      <p class="eyebrow">Демо</p>
-      <h1>Начать смену</h1>
-      <p class="lead">Заполни данные смены, отмечай поломки прямо во время работы и смотри историю и состояние оборудования.</p>
-      <button type="button" id="start-shift-btn" class="btn">Начать смену</button>
-    </div>
-  </section>
-
-  <section id="screen-shift-form" class="center-wrap" hidden>
+<section id="screen-shift-form" class="center-wrap" hidden>
     <div class="card">
       <p class="eyebrow">Данные смены</p>
       <h1>Заполните данные</h1>
@@ -476,6 +478,8 @@
       <button type="button" id="confirm-shift-btn" class="btn">Начать смену</button>
     </div>
   </section>
+
+  <div class="app">
 
   <section id="screen-main" hidden>
     <div class="shift-meta" id="shift-meta-line"></div>
