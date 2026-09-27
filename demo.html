@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>Журнал смены — демо инструмента</title>
+<meta name="description" content="Проведи смену: заполни данные, отмечай поломки и простои, посмотри историю и состояние оборудования — прямо в браузере.">
+<style>
+  :root {
+    --bg: #14181c;
+    --bg-panel: #1c2127;
+    --bg-field: #20262d;
+    --text: #eef1f4;
+    --text-muted: #8b95a1;
+    --accent: #e0a83f;
+    --accent-text: #14181c;
+    --danger: #d9704f;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.5;
+    padding-top: 64px;
+  }
+
+  .top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    background: rgba(20, 24, 28, 0.92);
+    backdrop-filter: blur(4px);
+    z-index: 20;
+  }
+
+  .back-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .back-link:hover { color: var(--text); }
+
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+    line-height: 1.2;
+    margin: 0 0 12px;
+  }
+
+  h2 { font-size: 1.1rem; margin: 0 0 14px; }
+
+  p { margin: 0 0 14px; color: var(--text-muted); }
+
+  p.eyebrow {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin: 0 0 10px;
+  }
+
+  p.lead { color: var(--text); font-size: 1.02rem; }
+
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    padding: 28px;
+  }
+
+  .center-wrap {
+    min-height: calc(100vh - 64px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .center-wrap .card { max-width: 460px; width: 100%; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+    padding: 13px 24px;
+    border-radius: var(--radius);
+    border: none;
+    text-decoration: none;
+    font-size: 0.98rem;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .btn:hover { filter: brightness(1.08); }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: none;
+  }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-danger { background: var(--danger); color: #1c0e08; }
+
+  .btn-small {
+    width: auto;
+    padding: 9px 16px;
+    font-size: 0.85rem;
+  }
+
+  .field { margin-bottom: 20px; }
+
+  .field-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .field-error .field-label { color: var(--danger); }
+
+  input[type="text"],
+  input[type="datetime-local"] {
+    width: 100%;
+    background: var(--bg-field);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 1rem;
+    font-family: inherit;
+    color-scheme: dark;
+  }
+
+  .field-error input[type="text"],
+  .field-error input[type="datetime-local"] {
+    border-color: var(--danger);
+  }
+
+  .datetime-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .datetime-row input[type="datetime-local"] { flex: 1; }
+
+  .datetime-confirm {
+    flex: 0 0 auto;
+    width: 46px;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .datetime-confirm:hover { filter: brightness(1.08); }
+  .datetime-confirm:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    background: var(--bg-field);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .chip:hover, .chip:focus-visible { border-color: var(--accent); outline: none; }
+
+  .chip.is-selected {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+
+  .checkbox-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .checkbox-row span { color: var(--text); }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    padding: 10px 4px 12px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-right: 14px;
+  }
+
+  .tab-btn.is-active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .tab-panel[hidden] { display: none; }
+
+  .shift-meta {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 18px;
+  }
+
+  .list { display: grid; gap: 10px; margin-top: 16px; }
+
+  .decision-item {
+    background: var(--bg-field);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .decision-item .chip-row { margin-top: 10px; }
+
+  .row-card {
+    background: var(--bg-field);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: left;
+    color: var(--text);
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.95rem;
+  }
+
+  .row-card:hover, .row-card:focus-visible { border-color: var(--accent); outline: none; }
+
+  .row-title { font-weight: 600; margin-bottom: 4px; }
+
+  .row-sub { color: var(--text-muted); font-size: 0.85rem; }
+
+  .shift-header { position: relative; padding-right: 34px; }
+
+  .shift-chevron {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    transition: transform 0.15s ease;
+  }
+
+  .shift-chevron.is-open { transform: translateY(-50%) rotate(180deg); }
+
+  .sub-list {
+    margin: 8px 0 0 16px;
+    padding-left: 14px;
+    border-left: 2px solid rgba(255, 255, 255, 0.12);
+    display: grid;
+    gap: 2px;
+  }
+
+  .sub-row {
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+    padding: 10px 6px;
+    text-align: left;
+    color: var(--text);
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .sub-row:last-child { border-bottom: none; }
+  .sub-row:hover, .sub-row:focus-visible { color: var(--accent); outline: none; }
+
+  .sub-row-title { font-size: 0.88rem; font-weight: 600; margin-bottom: 3px; }
+  .sub-row-sub { font-size: 0.78rem; color: var(--text-muted); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  .badge-progress { background: rgba(224, 168, 63, 0.18); color: var(--accent); }
+  .badge-done { background: rgba(139, 149, 161, 0.18); color: var(--text-muted); }
+
+  .empty-note {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  .equip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .equip-stats { text-align: right; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 30;
+  }
+
+  .modal-overlay[hidden] { display: none; }
+
+  .modal-card {
+    background: var(--bg-panel);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    padding: 26px;
+    max-width: 460px;
+    width: 100%;
+    margin: auto;
+  }
+
+  .modal-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .detail-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.92rem;
+  }
+
+  .detail-line:last-child { border-bottom: none; }
+  .detail-line span:first-child { color: var(--text-muted); }
+  .detail-line span:last-child { color: var(--text); text-align: right; }
+
+  .top-end-btn { display: none; }
+  .top-end-btn.is-visible { display: inline-flex; }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 480px) {
+    .card, .modal-card { padding: 20px; }
+    .equip-row { flex-direction: column; align-items: flex-start; }
+    .equip-stats { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a class="back-link" href="index.html">&larr; Журнал смены</a>
+  <button type="button" id="end-shift-btn" class="btn btn-danger btn-small top-end-btn">Закончить смену</button>
+</div>
+
+<div class="app">
+
+  <section id="screen-start" class="center-wrap">
+    <div class="card">
+      <p class="eyebrow">Демо</p>
+      <h1>Начать смену</h1>
+      <p class="lead">Заполни данные смены, отмечай поломки прямо во время работы и смотри историю и состояние оборудования.</p>
+      <button type="button" id="start-shift-btn" class="btn">Начать смену</button>
+    </div>
+  </section>
+
+  <section id="screen-shift-form" class="center-wrap" hidden>
+    <div class="card">
+      <p class="eyebrow">Данные смены</p>
+      <h1>Заполните данные</h1>
+
+      <div class="field" id="field-shift-number">
+        <span class="field-label">Номер смены</span>
+        <div class="chip-row" data-chip-group="shiftNumber">
+          <button type="button" class="chip" data-value="1">1</button>
+          <button type="button" class="chip" data-value="2">2</button>
+          <button type="button" class="chip" data-value="3">3</button>
+        </div>
+      </div>
+
+      <div class="field" id="field-shift-master">
+        <span class="field-label">Фамилия мастера</span>
+        <div class="chip-row" data-chip-group="shiftMaster">
+          <button type="button" class="chip" data-value="Иванов">Иванов</button>
+          <button type="button" class="chip" data-value="Петров">Петров</button>
+          <button type="button" class="chip" data-value="Красавчиков">Красавчиков</button>
+          <button type="button" class="chip" data-value="__other">Другое</button>
+        </div>
+        <div id="shift-master-other-wrap" style="margin-top: 10px;" hidden>
+          <input type="text" id="shift-master-other" placeholder="Фамилия мастера">
+        </div>
+      </div>
+
+      <div class="field" id="field-shift-type">
+        <span class="field-label">Тип смены</span>
+        <div class="chip-row" data-chip-group="shiftType">
+          <button type="button" class="chip" data-value="Дневная">Дневная</button>
+          <button type="button" class="chip" data-value="Ночная">Ночная</button>
+        </div>
+      </div>
+
+      <div class="field" id="field-shift-start">
+        <span class="field-label">Дата и время начала смены</span>
+        <div class="datetime-row">
+          <input type="datetime-local" id="shift-start-input">
+          <button type="button" class="datetime-confirm" data-target="shift-start-input" aria-label="Подтвердить дату и время">&#10003;</button>
+        </div>
+      </div>
+
+      <button type="button" id="confirm-shift-btn" class="btn">Начать смену</button>
+    </div>
+  </section>
+
+  <section id="screen-main" hidden>
+    <div class="shift-meta" id="shift-meta-line"></div>
+
+    <div class="tabs">
+      <button type="button" class="tab-btn is-active" data-tab="current">Текущая смена</button>
+      <button type="button" class="tab-btn" data-tab="history">История поломок</button>
+      <button type="button" class="tab-btn" data-tab="equipment">Состояние оборудования</button>
+    </div>
+
+    <div class="tab-panel" id="tab-current">
+      <button type="button" id="add-breakdown-btn" class="btn">+ Добавить поломку</button>
+      <div class="list" id="current-breakdown-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-history" hidden>
+      <div class="list" id="history-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-equipment" hidden>
+      <div class="list" id="equipment-list"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal-overlay" id="modal-breakdown" hidden>
+  <div class="modal-card">
+    <p class="eyebrow" id="breakdown-modal-eyebrow">Поломка</p>
+    <h2 id="breakdown-modal-title">Новая поломка</h2>
+
+    <div class="field" id="field-bd-equipment">
+      <span class="field-label">Оборудование</span>
+      <div class="chip-row" data-chip-group="bdEquipment">
+        <button type="button" class="chip" data-value="Станок 1">Станок 1</button>
+        <button type="button" class="chip" data-value="Станок 2">Станок 2</button>
+        <button type="button" class="chip" data-value="Станок 3">Станок 3</button>
+        <button type="button" class="chip" data-value="__other">Другое</button>
+      </div>
+      <div id="bd-equipment-other-wrap" style="margin-top: 10px;" hidden>
+        <input type="text" id="bd-equipment-other" placeholder="Название оборудования">
+      </div>
+    </div>
+
+    <div class="field" id="field-bd-cause">
+      <span class="field-label">Причина остановки</span>
+      <input type="text" id="bd-cause-input" placeholder="Например: разболтался крепёж">
+    </div>
+
+    <div class="field" id="field-bd-start">
+      <span class="field-label">Время остановки (начало ремонта)</span>
+      <div class="datetime-row">
+        <input type="datetime-local" id="bd-start-input">
+        <button type="button" class="datetime-confirm" data-target="bd-start-input" aria-label="Подтвердить дату и время">&#10003;</button>
+      </div>
+    </div>
+
+    <label class="checkbox-row" for="bd-in-progress">
+      <input type="checkbox" id="bd-in-progress" checked>
+      <span>В состоянии ремонта</span>
+    </label>
+
+    <div class="field" id="field-bd-end" hidden>
+      <span class="field-label">Время окончания ремонта</span>
+      <div class="datetime-row">
+        <input type="datetime-local" id="bd-end-input">
+        <button type="button" class="datetime-confirm" data-target="bd-end-input" aria-label="Подтвердить дату и время">&#10003;</button>
+      </div>
+    </div>
+
+    <div class="field" id="field-bd-closed-by" hidden>
+      <span class="field-label">Фамилия закончившего ремонт</span>
+      <input type="text" id="bd-closed-by-input" placeholder="Фамилия">
+    </div>
+
+    <div class="field" id="field-bd-operator">
+      <span class="field-label">Фамилия начавшего ремонт</span>
+      <input type="text" id="bd-operator-input" placeholder="Фамилия оператора">
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="save-breakdown-btn" class="btn">Сохранить</button>
+      <button type="button" id="cancel-breakdown-btn" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-equipment-list" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Оборудование</p>
+    <h2 id="equipment-list-title"></h2>
+    <div class="list" id="equipment-breakdown-list"></div>
+    <div class="modal-actions">
+      <button type="button" id="close-equipment-list-btn" class="btn btn-secondary">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-detail" style="z-index: 31;" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Поломка</p>
+    <h2 id="detail-title"></h2>
+    <div id="detail-body"></div>
+    <div class="modal-actions">
+      <button type="button" id="close-detail-btn" class="btn btn-secondary">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-open-repairs" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Есть незавершённые ремонты</p>
+    <h2>Что делать с поломками в ремонте?</h2>
+    <p>Эту смену нельзя закончить, пока не решено, что делать с каждой поломкой. Закрыть — нужно указать время и фамилию закончившего ремонт, поломка будет отмечена устранённой. Перенести — она перейдёт в следующую смену и останется «в ремонте», пока её не завершат там.</p>
+    <div class="list" id="open-repairs-list"></div>
+    <div class="modal-actions">
+      <button type="button" id="open-repairs-continue-btn" class="btn" disabled>Продолжить</button>
+      <button type="button" id="open-repairs-cancel-btn" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-end-confirm" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Подтверждение</p>
+    <h2>Закончить смену?</h2>
+    <p>Данные смены сохранятся в истории. Отменить это действие будет нельзя.</p>
+    <div class="modal-actions">
+      <button type="button" id="confirm-end-btn" class="btn btn-danger">Да, закончить смену</button>
+      <button type="button" id="cancel-end-btn" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'zhurnalSmenyDemo';
+
+  var EQUIPMENT_OPTIONS = ['Станок 1', 'Станок 2', 'Станок 3'];
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [] };
+      var parsed = JSON.parse(raw);
+      return {
+        activeShift: parsed.activeShift || null,
+        history: parsed.history || [],
+        carriedBreakdowns: parsed.carriedBreakdowns || []
+      };
+    } catch (e) {
+      return { activeShift: null, history: [], carriedBreakdowns: [] };
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  var state = loadState();
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function toDatetimeLocalValue(date) {
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) +
+      'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+  }
+
+  function formatDateTime(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function minutesBetween(startIso, endIso) {
+    return Math.max(0, Math.round((new Date(endIso) - new Date(startIso)) / 60000));
+  }
+
+  // ---------- Screens ----------
+  var screenStart = document.getElementById('screen-start');
+  var screenShiftForm = document.getElementById('screen-shift-form');
+  var screenMain = document.getElementById('screen-main');
+  var endShiftTopBtn = document.getElementById('end-shift-btn');
+
+  function showScreen(name) {
+    screenStart.hidden = name !== 'start';
+    screenShiftForm.hidden = name !== 'shift-form';
+    screenMain.hidden = name !== 'main';
+    endShiftTopBtn.classList.toggle('is-visible', name === 'main');
+  }
+
+  // ---------- Chip group helper ----------
+  function setupChipGroup(root, groupName, onChange) {
+    var buttons = root.querySelectorAll('[data-chip-group="' + groupName + '"] .chip');
+    var selected = null;
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        buttons.forEach(function (b) { b.classList.remove('is-selected'); });
+        btn.classList.add('is-selected');
+        selected = btn.getAttribute('data-value');
+        onChange(selected);
+      });
+    });
+    return {
+      get: function () { return selected; },
+      reset: function () {
+        selected = null;
+        buttons.forEach(function (b) { b.classList.remove('is-selected'); });
+      },
+      select: function (value) {
+        selected = value;
+        buttons.forEach(function (b) {
+          b.classList.toggle('is-selected', b.getAttribute('data-value') === value);
+        });
+      }
+    };
+  }
+
+  function clearFieldError(fieldEl) { fieldEl.classList.remove('field-error'); }
+  function setFieldError(fieldEl) { fieldEl.classList.add('field-error'); }
+
+  // ---------- Shift form ----------
+  var shiftNumberGroup = setupChipGroup(document, 'shiftNumber', function () {
+    clearFieldError(document.getElementById('field-shift-number'));
+  });
+  var shiftMasterGroup = setupChipGroup(document, 'shiftMaster', function (value) {
+    clearFieldError(document.getElementById('field-shift-master'));
+    var otherWrap = document.getElementById('shift-master-other-wrap');
+    otherWrap.hidden = value !== '__other';
+    if (value === '__other') document.getElementById('shift-master-other').focus();
+  });
+  var shiftTypeGroup = setupChipGroup(document, 'shiftType', function () {
+    clearFieldError(document.getElementById('field-shift-type'));
+  });
+
+  var shiftStartInput = document.getElementById('shift-start-input');
+
+  document.getElementById('start-shift-btn').addEventListener('click', function () {
+    shiftNumberGroup.reset();
+    shiftMasterGroup.reset();
+    shiftTypeGroup.reset();
+    document.getElementById('shift-master-other-wrap').hidden = true;
+    document.getElementById('shift-master-other').value = '';
+    shiftStartInput.value = toDatetimeLocalValue(new Date());
+    ['field-shift-number', 'field-shift-master', 'field-shift-type'].forEach(function (id) {
+      clearFieldError(document.getElementById(id));
+    });
+    showScreen('shift-form');
+  });
+
+  document.getElementById('confirm-shift-btn').addEventListener('click', function () {
+    var number = shiftNumberGroup.get();
+    var masterChip = shiftMasterGroup.get();
+    var type = shiftTypeGroup.get();
+    var master = masterChip === '__other' ? document.getElementById('shift-master-other').value.trim() : masterChip;
+    var startAt = shiftStartInput.value;
+
+    var valid = true;
+    if (!number) { setFieldError(document.getElementById('field-shift-number')); valid = false; }
+    if (!master) { setFieldError(document.getElementById('field-shift-master')); valid = false; }
+    if (!type) { setFieldError(document.getElementById('field-shift-type')); valid = false; }
+    if (!startAt) { setFieldError(document.getElementById('field-shift-start')); valid = false; }
+    if (!valid) return;
+
+    state.activeShift = {
+      id: uid(),
+      number: number,
+      master: master,
+      type: type,
+      startAt: new Date(startAt).toISOString(),
+      endedAt: null,
+      breakdowns: state.carriedBreakdowns
+    };
+    state.carriedBreakdowns = [];
+    saveState();
+    renderMain();
+    showScreen('main');
+  });
+
+  // ---------- Breakdown modal ----------
+  var modalBreakdown = document.getElementById('modal-breakdown');
+  var bdEquipmentGroup = setupChipGroup(document, 'bdEquipment', function (value) {
+    clearFieldError(document.getElementById('field-bd-equipment'));
+    var otherWrap = document.getElementById('bd-equipment-other-wrap');
+    otherWrap.hidden = value !== '__other';
+    if (value === '__other') document.getElementById('bd-equipment-other').focus();
+  });
+
+  var bdCauseInput = document.getElementById('bd-cause-input');
+  var bdStartInput = document.getElementById('bd-start-input');
+  var bdInProgress = document.getElementById('bd-in-progress');
+  var bdEndField = document.getElementById('field-bd-end');
+  var bdEndInput = document.getElementById('bd-end-input');
+  var bdOperatorInput = document.getElementById('bd-operator-input');
+  var bdClosedByField = document.getElementById('field-bd-closed-by');
+  var bdClosedByInput = document.getElementById('bd-closed-by-input');
+
+  bdInProgress.addEventListener('change', function () {
+    bdEndField.hidden = bdInProgress.checked;
+    bdClosedByField.hidden = bdInProgress.checked;
+    if (!bdInProgress.checked && !bdEndInput.value) {
+      bdEndInput.value = toDatetimeLocalValue(new Date());
+    }
+  });
+
+  var editingBreakdownId = null;
+
+  function openBreakdownModal(existing) {
+    ['field-bd-equipment', 'field-bd-cause', 'field-bd-start', 'field-bd-end', 'field-bd-closed-by', 'field-bd-operator'].forEach(function (id) {
+      clearFieldError(document.getElementById(id));
+    });
+    bdEquipmentGroup.reset();
+    document.getElementById('bd-equipment-other-wrap').hidden = true;
+    document.getElementById('bd-equipment-other').value = '';
+    bdCauseInput.value = '';
+    bdOperatorInput.value = '';
+    bdEndInput.value = '';
+    bdClosedByInput.value = '';
+
+    if (existing) {
+      editingBreakdownId = existing.id;
+      document.getElementById('breakdown-modal-title').textContent = 'Завершение ремонта';
+      var isKnown = EQUIPMENT_OPTIONS.indexOf(existing.equipment) !== -1;
+      bdEquipmentGroup.select(isKnown ? existing.equipment : '__other');
+      if (!isKnown) {
+        document.getElementById('bd-equipment-other-wrap').hidden = false;
+        document.getElementById('bd-equipment-other').value = existing.equipment;
+      }
+      bdCauseInput.value = existing.cause;
+      bdStartInput.value = toDatetimeLocalValue(new Date(existing.repairStart));
+      bdOperatorInput.value = existing.operator;
+      bdInProgress.checked = true;
+      bdEndField.hidden = true;
+      bdClosedByField.hidden = true;
+      // Disable already-locked fields conceptually by leaving them editable is fine for a demo,
+      // but the end-time field must stay empty until this resume/completion step.
+    } else {
+      editingBreakdownId = null;
+      document.getElementById('breakdown-modal-title').textContent = 'Новая поломка';
+      bdStartInput.value = toDatetimeLocalValue(new Date());
+      bdInProgress.checked = true;
+      bdEndField.hidden = true;
+      bdClosedByField.hidden = true;
+    }
+
+    modalBreakdown.hidden = false;
+  }
+
+  document.getElementById('add-breakdown-btn').addEventListener('click', function () {
+    openBreakdownModal(null);
+  });
+
+  document.getElementById('cancel-breakdown-btn').addEventListener('click', function () {
+    modalBreakdown.hidden = true;
+  });
+
+  document.getElementById('save-breakdown-btn').addEventListener('click', function () {
+    var equipChip = bdEquipmentGroup.get();
+    var equipment = equipChip === '__other' ? document.getElementById('bd-equipment-other').value.trim() : equipChip;
+    var cause = bdCauseInput.value.trim();
+    var start = bdStartInput.value;
+    var operator = bdOperatorInput.value.trim();
+    var inProgress = bdInProgress.checked;
+    var end = bdEndInput.value;
+    var closedBy = bdClosedByInput.value.trim();
+
+    var valid = true;
+    if (!equipment) { setFieldError(document.getElementById('field-bd-equipment')); valid = false; }
+    if (!cause) { setFieldError(document.getElementById('field-bd-cause')); valid = false; }
+    if (!start) { setFieldError(document.getElementById('field-bd-start')); valid = false; }
+    if (!operator) { setFieldError(document.getElementById('field-bd-operator')); valid = false; }
+    if (!inProgress && !end) { setFieldError(bdEndField); valid = false; }
+    if (!inProgress && !closedBy) { setFieldError(bdClosedByField); valid = false; }
+    if (!valid) return;
+
+    var shift = state.activeShift;
+    if (editingBreakdownId) {
+      var record = shift.breakdowns.filter(function (b) { return b.id === editingBreakdownId; })[0];
+      record.equipment = equipment;
+      record.cause = cause;
+      record.repairStart = new Date(start).toISOString();
+      record.operator = operator;
+      record.repairEnd = inProgress ? null : new Date(end).toISOString();
+      if (!inProgress) {
+        record.closedBy = closedBy;
+        record.endShiftLabel = shiftSummaryLine(shift);
+      }
+    } else {
+      shift.breakdowns.unshift({
+        id: uid(),
+        equipment: equipment,
+        cause: cause,
+        repairStart: new Date(start).toISOString(),
+        repairEnd: inProgress ? null : new Date(end).toISOString(),
+        operator: operator,
+        closedBy: inProgress ? null : closedBy,
+        startShiftLabel: shiftSummaryLine(shift),
+        endShiftLabel: inProgress ? null : shiftSummaryLine(shift)
+      });
+    }
+
+    saveState();
+    modalBreakdown.hidden = true;
+    renderMain();
+  });
+
+  // ---------- Detail modal (read-only) ----------
+  var modalDetail = document.getElementById('modal-detail');
+
+  function openDetailModal(record) {
+    document.getElementById('detail-title').textContent = record.equipment;
+    var status = record.repairEnd
+      ? 'Устранено · ' + minutesBetween(record.repairStart, record.repairEnd) + ' мин'
+      : 'В ремонте';
+    var body = document.getElementById('detail-body');
+    body.innerHTML = '';
+    var lines = [
+      ['Причина', record.cause],
+      ['Начало ремонта', formatDateTime(record.repairStart)],
+      ['Смена начала ремонта', record.startShiftLabel || '—'],
+      ['Начал ремонт', record.operator],
+      ['Окончание ремонта', record.repairEnd ? formatDateTime(record.repairEnd) : '—'],
+      ['Смена завершения ремонта', record.repairEnd ? (record.endShiftLabel || '—') : '—'],
+      ['Закончил ремонт', record.repairEnd ? (record.closedBy || '—') : '—'],
+      ['Статус', status]
+    ];
+    lines.forEach(function (pair) {
+      var line = document.createElement('div');
+      line.className = 'detail-line';
+      var k = document.createElement('span'); k.textContent = pair[0];
+      var v = document.createElement('span'); v.textContent = pair[1];
+      line.appendChild(k); line.appendChild(v);
+      body.appendChild(line);
+    });
+    modalDetail.hidden = false;
+  }
+
+  document.getElementById('close-detail-btn').addEventListener('click', function () {
+    modalDetail.hidden = true;
+  });
+
+  // ---------- End shift ----------
+  var modalEndConfirm = document.getElementById('modal-end-confirm');
+  var modalOpenRepairs = document.getElementById('modal-open-repairs');
+  var openRepairsList = document.getElementById('open-repairs-list');
+  var openRepairsContinueBtn = document.getElementById('open-repairs-continue-btn');
+  var pendingRepairDecisions = {};
+
+  function startEndShiftFlow() {
+    var openOnes = state.activeShift.breakdowns.filter(function (b) { return !b.repairEnd; });
+    if (openOnes.length === 0) {
+      modalEndConfirm.hidden = false;
+    } else {
+      openOpenRepairsModal(openOnes);
+    }
+  }
+
+  function openOpenRepairsModal(openOnes) {
+    pendingRepairDecisions = {};
+    openRepairsContinueBtn.disabled = true;
+    openRepairsList.innerHTML = '';
+
+    function updateReadiness() {
+      var ids = Object.keys(pendingRepairDecisions);
+      var allReady = ids.length === openOnes.length && ids.every(function (id) {
+        return pendingRepairDecisions[id].ready();
+      });
+      openRepairsContinueBtn.disabled = !allReady;
+    }
+
+    openOnes.forEach(function (record) {
+      var item = document.createElement('div');
+      item.className = 'decision-item';
+      var title = document.createElement('div');
+      title.className = 'row-title';
+      title.textContent = record.equipment + ' — ' + record.cause;
+      var sub = document.createElement('div');
+      sub.className = 'row-sub';
+      sub.textContent = 'Начало ремонта: ' + formatDateTime(record.repairStart) + ' · начал ' + record.operator;
+
+      var chipRow = document.createElement('div');
+      chipRow.className = 'chip-row';
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'chip';
+      closeBtn.textContent = 'Закрыть';
+      var transferBtn = document.createElement('button');
+      transferBtn.type = 'button';
+      transferBtn.className = 'chip';
+      transferBtn.textContent = 'Перенести на другую смену';
+      chipRow.appendChild(closeBtn);
+      chipRow.appendChild(transferBtn);
+
+      var closeFields = document.createElement('div');
+      closeFields.hidden = true;
+      closeFields.style.marginTop = '14px';
+
+      var endWrap = document.createElement('div');
+      endWrap.className = 'field';
+      var endLabel = document.createElement('span');
+      endLabel.className = 'field-label';
+      endLabel.textContent = 'Время окончания ремонта';
+      var endRow = document.createElement('div');
+      endRow.className = 'datetime-row';
+      var endInput = document.createElement('input');
+      endInput.type = 'datetime-local';
+      var endConfirmBtn = document.createElement('button');
+      endConfirmBtn.type = 'button';
+      endConfirmBtn.className = 'datetime-confirm';
+      endConfirmBtn.setAttribute('aria-label', 'Подтвердить дату и время');
+      endConfirmBtn.innerHTML = '&#10003;';
+      endConfirmBtn.addEventListener('click', function () { endInput.blur(); });
+      endRow.appendChild(endInput);
+      endRow.appendChild(endConfirmBtn);
+      endWrap.appendChild(endLabel);
+      endWrap.appendChild(endRow);
+
+      var closedByWrap = document.createElement('div');
+      closedByWrap.className = 'field';
+      closedByWrap.style.marginTop = '14px';
+      var closedByLabel = document.createElement('span');
+      closedByLabel.className = 'field-label';
+      closedByLabel.textContent = 'Фамилия закончившего ремонт';
+      var closedByInput = document.createElement('input');
+      closedByInput.type = 'text';
+      closedByInput.placeholder = 'Фамилия';
+      closedByWrap.appendChild(closedByLabel);
+      closedByWrap.appendChild(closedByInput);
+
+      closeFields.appendChild(endWrap);
+      closeFields.appendChild(closedByWrap);
+
+      pendingRepairDecisions[record.id] = {
+        decision: null,
+        record: record,
+        ready: function () {
+          if (this.decision === 'transfer') return true;
+          if (this.decision === 'close') return !!endInput.value && !!closedByInput.value.trim();
+          return false;
+        },
+        endValue: function () { return endInput.value; },
+        closedByValue: function () { return closedByInput.value.trim(); }
+      };
+
+      closeBtn.addEventListener('click', function () {
+        pendingRepairDecisions[record.id].decision = 'close';
+        closeBtn.classList.add('is-selected');
+        transferBtn.classList.remove('is-selected');
+        closeFields.hidden = false;
+        if (!endInput.value) endInput.value = toDatetimeLocalValue(new Date());
+        updateReadiness();
+      });
+
+      transferBtn.addEventListener('click', function () {
+        pendingRepairDecisions[record.id].decision = 'transfer';
+        transferBtn.classList.add('is-selected');
+        closeBtn.classList.remove('is-selected');
+        closeFields.hidden = true;
+        updateReadiness();
+      });
+
+      endInput.addEventListener('input', updateReadiness);
+      closedByInput.addEventListener('input', updateReadiness);
+
+      item.appendChild(title);
+      item.appendChild(sub);
+      item.appendChild(chipRow);
+      item.appendChild(closeFields);
+      openRepairsList.appendChild(item);
+    });
+
+    modalOpenRepairs.hidden = false;
+  }
+
+  document.getElementById('open-repairs-cancel-btn').addEventListener('click', function () {
+    modalOpenRepairs.hidden = true;
+  });
+
+  openRepairsContinueBtn.addEventListener('click', function () {
+    var shift = state.activeShift;
+    Object.keys(pendingRepairDecisions).forEach(function (id) {
+      var decision = pendingRepairDecisions[id];
+      if (decision.decision === 'transfer') {
+        var idx = shift.breakdowns.findIndex(function (b) { return b.id === id; });
+        if (idx === -1) return;
+        var moved = shift.breakdowns.splice(idx, 1)[0];
+        state.carriedBreakdowns.push(moved);
+      } else if (decision.decision === 'close') {
+        var record = shift.breakdowns.filter(function (b) { return b.id === id; })[0];
+        record.repairEnd = new Date(decision.endValue()).toISOString();
+        record.closedBy = decision.closedByValue();
+        record.endShiftLabel = shiftSummaryLine(shift);
+      }
+    });
+    saveState();
+    modalOpenRepairs.hidden = true;
+    modalEndConfirm.hidden = false;
+  });
+
+  endShiftTopBtn.addEventListener('click', startEndShiftFlow);
+  document.getElementById('cancel-end-btn').addEventListener('click', function () { modalEndConfirm.hidden = true; });
+
+  document.getElementById('confirm-end-btn').addEventListener('click', function () {
+    state.activeShift.endedAt = new Date().toISOString();
+    state.history.unshift(state.activeShift);
+    state.activeShift = null;
+    saveState();
+    modalEndConfirm.hidden = true;
+    showScreen('start');
+  });
+
+  // ---------- Tabs ----------
+  var tabButtons = document.querySelectorAll('.tab-btn');
+
+  function switchTab(tab) {
+    tabButtons.forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-tab') === tab); });
+    document.getElementById('tab-current').hidden = tab !== 'current';
+    document.getElementById('tab-history').hidden = tab !== 'history';
+    document.getElementById('tab-equipment').hidden = tab !== 'equipment';
+    if (tab === 'history') renderHistory();
+    if (tab === 'equipment') renderEquipment();
+  }
+
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () { switchTab(btn.getAttribute('data-tab')); });
+  });
+
+  // ---------- Rendering: current shift ----------
+  function shiftSummaryLine(shift) {
+    return 'Смена ' + shift.number + ' · ' + shift.type + ' · мастер ' + shift.master + ' · начата ' + formatDateTime(shift.startAt);
+  }
+
+  function renderCurrentTab() {
+    var shift = state.activeShift;
+    document.getElementById('shift-meta-line').textContent = shiftSummaryLine(shift);
+
+    var list = document.getElementById('current-breakdown-list');
+    list.innerHTML = '';
+    if (shift.breakdowns.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'empty-note';
+      empty.textContent = 'Пока поломок не было — хорошая смена.';
+      list.appendChild(empty);
+      return;
+    }
+
+    shift.breakdowns.forEach(function (record) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'row-card';
+      var title = document.createElement('div');
+      title.className = 'row-title';
+      title.textContent = record.equipment + ' — ' + record.cause;
+      var sub = document.createElement('div');
+      sub.className = 'row-sub';
+      sub.textContent = 'Начало ремонта: ' + formatDateTime(record.repairStart) + ' · оператор ' + record.operator;
+      var badge = document.createElement('span');
+      if (record.repairEnd) {
+        badge.className = 'badge badge-done';
+        badge.textContent = 'Устранено · ' + minutesBetween(record.repairStart, record.repairEnd) + ' мин';
+      } else {
+        badge.className = 'badge badge-progress';
+        badge.textContent = 'В ремонте';
+      }
+      row.appendChild(title);
+      row.appendChild(sub);
+      row.appendChild(document.createElement('br'));
+      row.appendChild(badge);
+
+      row.addEventListener('click', function () {
+        if (record.repairEnd) {
+          openDetailModal(record);
+        } else {
+          openBreakdownModal(record);
+        }
+      });
+
+      list.appendChild(row);
+    });
+  }
+
+  // ---------- Rendering: history ----------
+  function allShiftsNewestFirst() {
+    var shifts = state.history.slice();
+    if (state.activeShift) shifts = [state.activeShift].concat(shifts);
+    return shifts;
+  }
+
+  function renderHistory() {
+    var container = document.getElementById('history-list');
+    container.innerHTML = '';
+    var shifts = allShiftsNewestFirst();
+
+    if (shifts.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'empty-note';
+      empty.textContent = 'История пока пуста.';
+      container.appendChild(empty);
+      return;
+    }
+
+    shifts.forEach(function (shift) {
+      var wrap = document.createElement('div');
+
+      var header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'row-card shift-header';
+      var title = document.createElement('div');
+      title.className = 'row-title';
+      title.textContent = 'Смена ' + shift.number + ' · ' + shift.type + (shift.endedAt ? '' : ' · идёт сейчас');
+      var sub = document.createElement('div');
+      sub.className = 'row-sub';
+      sub.textContent = formatDateTime(shift.startAt) + ' · мастер ' + shift.master + ' · поломок: ' + shift.breakdowns.length;
+      var chevron = document.createElement('span');
+      chevron.className = 'shift-chevron';
+      chevron.textContent = '▼';
+      header.appendChild(title);
+      header.appendChild(sub);
+      header.appendChild(chevron);
+
+      var body = document.createElement('div');
+      body.className = 'sub-list';
+      body.hidden = true;
+
+      if (shift.breakdowns.length === 0) {
+        var noneNote = document.createElement('p');
+        noneNote.className = 'empty-note';
+        noneNote.textContent = 'В этой смене поломок не было.';
+        body.appendChild(noneNote);
+      } else {
+        shift.breakdowns.forEach(function (record) {
+          var row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'sub-row';
+          var rTitle = document.createElement('div');
+          rTitle.className = 'sub-row-title';
+          rTitle.textContent = record.equipment + ' — ' + record.cause;
+          var rSub = document.createElement('div');
+          rSub.className = 'sub-row-sub';
+          rSub.textContent = record.repairEnd
+            ? 'Устранено · ' + minutesBetween(record.repairStart, record.repairEnd) + ' мин'
+            : 'В ремонте';
+          row.appendChild(rTitle);
+          row.appendChild(rSub);
+          row.addEventListener('click', function (evt) {
+            evt.stopPropagation();
+            openDetailModal(record);
+          });
+          body.appendChild(row);
+        });
+      }
+
+      header.addEventListener('click', function () {
+        body.hidden = !body.hidden;
+        chevron.classList.toggle('is-open', !body.hidden);
+      });
+
+      wrap.appendChild(header);
+      wrap.appendChild(body);
+      container.appendChild(wrap);
+    });
+  }
+
+  // ---------- Rendering: equipment ----------
+  function renderEquipment() {
+    var container = document.getElementById('equipment-list');
+    container.innerHTML = '';
+
+    var shifts = allShiftsNewestFirst();
+    var allBreakdowns = [];
+    shifts.forEach(function (shift) {
+      shift.breakdowns.forEach(function (record) {
+        allBreakdowns.push(record);
+      });
+    });
+
+    var names = EQUIPMENT_OPTIONS.slice();
+    allBreakdowns.forEach(function (record) {
+      if (names.indexOf(record.equipment) === -1) names.push(record.equipment);
+    });
+
+    names.forEach(function (name) {
+      var items = allBreakdowns.filter(function (record) { return record.equipment === name; });
+      var totalMinutes = items.reduce(function (sum, record) {
+        return sum + (record.repairEnd ? minutesBetween(record.repairStart, record.repairEnd) : 0);
+      }, 0);
+
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'row-card equip-row';
+      var left = document.createElement('div');
+      var title = document.createElement('div');
+      title.className = 'row-title';
+      title.textContent = name;
+      left.appendChild(title);
+      var stats = document.createElement('div');
+      stats.className = 'equip-stats';
+      stats.textContent = items.length + ' поломок · ' + totalMinutes + ' мин простоя';
+      row.appendChild(left);
+      row.appendChild(stats);
+
+      row.addEventListener('click', function () {
+        if (items.length === 0) return;
+        showEquipmentHistory(name, items);
+      });
+
+      container.appendChild(row);
+    });
+  }
+
+  var modalEquipmentList = document.getElementById('modal-equipment-list');
+
+  function showEquipmentHistory(name, items) {
+    document.getElementById('equipment-list-title').textContent = name;
+    var list = document.getElementById('equipment-breakdown-list');
+    list.innerHTML = '';
+
+    items.forEach(function (record) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'row-card';
+      var title = document.createElement('div');
+      title.className = 'row-title';
+      title.textContent = record.cause;
+      var sub = document.createElement('div');
+      sub.className = 'row-sub';
+      sub.textContent = formatDateTime(record.repairStart) + ' · ' + record.startShiftLabel;
+      var badge = document.createElement('span');
+      if (record.repairEnd) {
+        badge.className = 'badge badge-done';
+        badge.textContent = 'Устранено · ' + minutesBetween(record.repairStart, record.repairEnd) + ' мин';
+      } else {
+        badge.className = 'badge badge-progress';
+        badge.textContent = 'В ремонте';
+      }
+      row.appendChild(title);
+      row.appendChild(sub);
+      row.appendChild(document.createElement('br'));
+      row.appendChild(badge);
+
+      row.addEventListener('click', function () {
+        openDetailModal(record);
+      });
+
+      list.appendChild(row);
+    });
+
+    modalEquipmentList.hidden = false;
+  }
+
+  document.getElementById('close-equipment-list-btn').addEventListener('click', function () {
+    modalEquipmentList.hidden = true;
+  });
+
+  function renderMain() {
+    switchTab('current');
+    renderCurrentTab();
+  }
+
+  // ---------- Datetime confirm buttons ----------
+  document.querySelectorAll('.datetime-confirm').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var input = document.getElementById(btn.getAttribute('data-target'));
+      input.blur();
+    });
+  });
+
+  // ---------- Boot ----------
+  if (state.activeShift) {
+    renderMain();
+    showScreen('main');
+  } else {
+    showScreen('start');
+  }
+})();
+</script>
+</body>
+</html>
