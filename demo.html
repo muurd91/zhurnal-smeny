@@ -233,16 +233,125 @@
     font-weight: 600;
   }
 
-  .checkbox-row {
+  .toggle-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     cursor: pointer;
     margin-bottom: 20px;
   }
 
-  .checkbox-row input { width: 18px; height: 18px; accent-color: var(--accent); }
-  .checkbox-row span { color: var(--text); }
+  .toggle-row span:first-child { color: var(--text); }
+
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 26px;
+    flex: 0 0 auto;
+  }
+
+  .toggle-switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-field);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+
+  .toggle-switch input:checked ~ .toggle-track {
+    background: rgba(224, 168, 63, 0.35);
+    border-color: var(--accent);
+  }
+
+  .toggle-switch input:checked ~ .toggle-track .toggle-thumb {
+    transform: translateX(20px);
+    background: var(--accent);
+  }
+
+  .toggle-switch input:focus-visible ~ .toggle-track {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .select-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--bg-field);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .select-trigger:hover, .select-trigger:focus-visible { border-color: var(--accent); outline: none; }
+
+  .select-trigger-text.is-placeholder { color: var(--text-muted); }
+
+  .select-chevron {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+    flex: 0 0 auto;
+  }
+
+  .select-trigger.is-open .select-chevron { transform: rotate(180deg); }
+
+  .field-error .select-trigger { border-color: var(--danger); }
+
+  .select-options {
+    margin-top: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .select-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--bg-field);
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .select-option:last-child { border-bottom: none; }
+  .select-option:hover, .select-option:focus-visible { background: var(--bg); outline: none; }
+  .select-option.is-selected { color: var(--accent); font-weight: 600; }
 
   .tabs {
     display: flex;
@@ -345,7 +454,6 @@
   .sub-row:hover, .sub-row:focus-visible { color: var(--accent); outline: none; }
 
   .sub-row-title { font-size: 0.88rem; font-weight: 600; margin-bottom: 3px; }
-  .sub-row-sub { font-size: 0.78rem; color: var(--text-muted); }
 
   .badge {
     display: inline-block;
@@ -527,11 +635,15 @@
 
     <div class="field" id="field-bd-equipment">
       <span class="field-label">Оборудование</span>
-      <div class="chip-row" data-chip-group="bdEquipment">
-        <button type="button" class="chip" data-value="Станок 1">Станок 1</button>
-        <button type="button" class="chip" data-value="Станок 2">Станок 2</button>
-        <button type="button" class="chip" data-value="Станок 3">Станок 3</button>
-        <button type="button" class="chip" data-value="__other">Другое</button>
+      <button type="button" class="select-trigger" id="bd-equipment-trigger">
+        <span class="select-trigger-text is-placeholder" id="bd-equipment-trigger-text">Выберите оборудование</span>
+        <span class="select-chevron">&#9662;</span>
+      </button>
+      <div class="select-options" id="bd-equipment-options" hidden>
+        <button type="button" class="select-option" data-value="Станок 1">Станок 1</button>
+        <button type="button" class="select-option" data-value="Станок 2">Станок 2</button>
+        <button type="button" class="select-option" data-value="Станок 3">Станок 3</button>
+        <button type="button" class="select-option" data-value="__other">Другое</button>
       </div>
       <div id="bd-equipment-other-wrap" style="margin-top: 10px;" hidden>
         <input type="text" id="bd-equipment-other" placeholder="Название оборудования">
@@ -551,9 +663,12 @@
       </div>
     </div>
 
-    <label class="checkbox-row" for="bd-in-progress">
-      <input type="checkbox" id="bd-in-progress" checked>
+    <label class="toggle-row" for="bd-in-progress">
       <span>В состоянии ремонта</span>
+      <span class="toggle-switch">
+        <input type="checkbox" id="bd-in-progress" checked>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </span>
     </label>
 
     <div class="field" id="field-bd-end" hidden>
@@ -717,6 +832,66 @@
     };
   }
 
+  // ---------- Expandable select helper ----------
+  function setupSelectDropdown(triggerId, optionsId, textId, placeholder, onChange) {
+    var trigger = document.getElementById(triggerId);
+    var optionsPanel = document.getElementById(optionsId);
+    var textEl = document.getElementById(textId);
+    var options = optionsPanel.querySelectorAll('.select-option');
+    var selected = null;
+
+    function close() {
+      optionsPanel.hidden = true;
+      trigger.classList.remove('is-open');
+    }
+
+    trigger.addEventListener('click', function () {
+      var willOpen = optionsPanel.hidden;
+      optionsPanel.hidden = !willOpen;
+      trigger.classList.toggle('is-open', willOpen);
+    });
+
+    document.addEventListener('click', function (evt) {
+      if (!optionsPanel.hidden && evt.target !== trigger && !trigger.contains(evt.target) && !optionsPanel.contains(evt.target)) {
+        close();
+      }
+    });
+
+    options.forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        options.forEach(function (o) { o.classList.remove('is-selected'); });
+        opt.classList.add('is-selected');
+        selected = opt.getAttribute('data-value');
+        textEl.textContent = opt.textContent;
+        textEl.classList.remove('is-placeholder');
+        close();
+        onChange(selected);
+      });
+    });
+
+    return {
+      get: function () { return selected; },
+      reset: function () {
+        selected = null;
+        textEl.textContent = placeholder;
+        textEl.classList.add('is-placeholder');
+        options.forEach(function (o) { o.classList.remove('is-selected'); });
+        close();
+      },
+      select: function (value) {
+        selected = value;
+        var match = null;
+        options.forEach(function (o) {
+          var isMatch = o.getAttribute('data-value') === value;
+          o.classList.toggle('is-selected', isMatch);
+          if (isMatch) match = o;
+        });
+        textEl.textContent = match ? match.textContent : placeholder;
+        textEl.classList.toggle('is-placeholder', !match);
+      }
+    };
+  }
+
   function clearFieldError(fieldEl) { fieldEl.classList.remove('field-error'); }
   function setFieldError(fieldEl) { fieldEl.classList.add('field-error'); }
 
@@ -780,7 +955,7 @@
 
   // ---------- Breakdown modal ----------
   var modalBreakdown = document.getElementById('modal-breakdown');
-  var bdEquipmentGroup = setupChipGroup(document, 'bdEquipment', function (value) {
+  var bdEquipmentGroup = setupSelectDropdown('bd-equipment-trigger', 'bd-equipment-options', 'bd-equipment-trigger-text', 'Выберите оборудование', function (value) {
     clearFieldError(document.getElementById('field-bd-equipment'));
     var otherWrap = document.getElementById('bd-equipment-other-wrap');
     otherWrap.hidden = value !== '__other';
@@ -1236,13 +1411,16 @@
           var rTitle = document.createElement('div');
           rTitle.className = 'sub-row-title';
           rTitle.textContent = record.equipment + ' — ' + record.cause;
-          var rSub = document.createElement('div');
-          rSub.className = 'sub-row-sub';
-          rSub.textContent = record.repairEnd
-            ? 'Устранено · ' + minutesBetween(record.repairStart, record.repairEnd) + ' мин'
-            : 'В ремонте';
+          var rBadge = document.createElement('span');
+          if (record.repairEnd) {
+            rBadge.className = 'badge badge-done';
+            rBadge.textContent = 'Устранено · ' + minutesBetween(record.repairStart, record.repairEnd) + ' мин';
+          } else {
+            rBadge.className = 'badge badge-progress';
+            rBadge.textContent = 'В ремонте';
+          }
           row.appendChild(rTitle);
-          row.appendChild(rSub);
+          row.appendChild(rBadge);
           row.addEventListener('click', function (evt) {
             evt.stopPropagation();
             openDetailModal(record);
