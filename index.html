@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="data:,">
 <title>Журнал смены — учёт простоев без облака</title>
-<meta name="description" content="Планшет вместо журнала простоев на бумаге или в голове. Три касания на событие, без облака и аккаунтов.">
+<meta name="description" content="Планшет вместо журнала простоев на бумаге или в голове. Отмечаешь поломку прямо у станка — без облака и аккаунтов.">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://muurd91.github.io/zhurnal-smeny/">
 <meta property="og:title" content="Журнал смены — учёт простоев без облака">
-<meta property="og:description" content="Планшет вместо журнала простоев на бумаге или в голове. Три касания на событие, без облака и аккаунтов.">
+<meta property="og:description" content="Планшет вместо журнала простоев на бумаге или в голове. Отмечаешь поломку прямо у станка — без облака и аккаунтов.">
 <meta property="og:image" content="https://muurd91.github.io/zhurnal-smeny/images/cover.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Журнал смены — учёт простоев без облака">
-<meta name="twitter:description" content="Планшет вместо журнала простоев на бумаге или в голове. Три касания на событие, без облака и аккаунтов.">
+<meta name="twitter:description" content="Планшет вместо журнала простоев на бумаге или в голове. Отмечаешь поломку прямо у станка — без облака и аккаунтов.">
 <meta name="twitter:image" content="https://muurd91.github.io/zhurnal-smeny/images/cover.jpg">
 <style>
   :root {
@@ -87,15 +87,6 @@
     font-size: clamp(1.15rem, 3vw, 1.4rem);
     font-weight: 600;
     margin: 0 0 20px;
-  }
-
-  .eyebrow {
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin: 0 0 12px;
   }
 
   .btn {
@@ -201,6 +192,7 @@
     display: block;
     width: 100%;
     height: auto;
+    max-height: 60vh;
     border-radius: var(--radius);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
@@ -255,7 +247,7 @@
         <p>Проблема не в самих поломках — они будут всегда. Проблема в том, что через неделю никто не вспомнит, какой узел ломается чаще других и сколько смен на этом потеряно.</p>
       </div>
       <div class="zone-photo">
-        <img src="images/polomka.jpg" alt="Мастер осматривает неисправность на производственной линии" width="800" height="1200" loading="lazy">
+        <img src="images/polomka.jpg" alt="Мастер осматривает неисправность на производственной линии" width="800" height="1200">
       </div>
     </div>
   </section>
@@ -269,7 +261,7 @@
 
         <h2>Как это работает</h2>
         <p>Отмечаешь оборудование, пишешь, что случилось, и время начала ремонта. Если ремонт ещё не закончен, поломка так и висит «в ремонте» — закрыть её можно позже, хоть в этой же смене, хоть в следующей.</p>
-        <p>Фиксация происходит прямо у станка, пока событие ещё в памяти, а не восстанавливается вечером по памяти или с чужих слов.</p>
+        <p>Фиксация происходит прямо у станка, пока событие ещё свежо, а не восстанавливается вечером по памяти или с чужих слов.</p>
       </div>
       <div class="zone-photo">
         <img src="images/planshet.jpg" alt="Мастер отмечает событие в журнале смены на планшете" width="800" height="1200" loading="lazy">
