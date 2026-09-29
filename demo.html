@@ -90,7 +90,7 @@
     color: var(--accent);
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     font-weight: 600;
     margin: 0 0 10px;
   }
@@ -152,7 +152,7 @@
 
   .btn-small {
     width: auto;
-    padding: 9px 16px;
+    padding: 12px 16px;
     font-size: 0.85rem;
   }
 
@@ -465,7 +465,7 @@
   }
 
   .badge-progress { background: rgba(224, 168, 63, 0.18); color: var(--accent); }
-  .badge-done { background: rgba(139, 149, 161, 0.18); color: var(--text-muted); }
+  .badge-done { background: rgba(139, 149, 161, 0.18); color: #b7bfc7; }
 
   .empty-note {
     color: var(--text-muted);
@@ -560,8 +560,8 @@
       <h1>Заполните данные</h1>
 
       <div class="field" id="field-shift-number">
-        <span class="field-label">Номер смены</span>
-        <div class="chip-row" data-chip-group="shiftNumber">
+        <span class="field-label" id="label-shift-number">Номер смены</span>
+        <div class="chip-row" data-chip-group="shiftNumber" role="group" aria-labelledby="label-shift-number">
           <button type="button" class="chip" data-value="1">1</button>
           <button type="button" class="chip" data-value="2">2</button>
           <button type="button" class="chip" data-value="3">3</button>
@@ -569,28 +569,28 @@
       </div>
 
       <div class="field" id="field-shift-master">
-        <span class="field-label">Фамилия мастера</span>
-        <div class="chip-row" data-chip-group="shiftMaster">
+        <span class="field-label" id="label-shift-master">Фамилия мастера</span>
+        <div class="chip-row" data-chip-group="shiftMaster" role="group" aria-labelledby="label-shift-master">
           <button type="button" class="chip" data-value="Иванов">Иванов</button>
           <button type="button" class="chip" data-value="Петров">Петров</button>
-          <button type="button" class="chip" data-value="Красавчиков">Красавчиков</button>
+          <button type="button" class="chip" data-value="Сидоров">Сидоров</button>
           <button type="button" class="chip" data-value="__other">Другое</button>
         </div>
         <div id="shift-master-other-wrap" style="margin-top: 10px;" hidden>
-          <input type="text" id="shift-master-other" placeholder="Фамилия мастера">
+          <input type="text" id="shift-master-other" placeholder="Фамилия мастера" aria-label="Фамилия мастера">
         </div>
       </div>
 
       <div class="field" id="field-shift-type">
-        <span class="field-label">Тип смены</span>
-        <div class="chip-row" data-chip-group="shiftType">
+        <span class="field-label" id="label-shift-type">Тип смены</span>
+        <div class="chip-row" data-chip-group="shiftType" role="group" aria-labelledby="label-shift-type">
           <button type="button" class="chip" data-value="Дневная">Дневная</button>
           <button type="button" class="chip" data-value="Ночная">Ночная</button>
         </div>
       </div>
 
       <div class="field" id="field-shift-start">
-        <span class="field-label">Дата и время начала смены</span>
+        <label class="field-label" for="shift-start-input">Дата и время начала смены</label>
         <div class="datetime-row">
           <input type="datetime-local" id="shift-start-input">
           <button type="button" class="datetime-confirm" data-target="shift-start-input" aria-label="Подтвердить дату и время">&#10003;</button>
@@ -634,8 +634,8 @@
     <h2 id="breakdown-modal-title">Новая поломка</h2>
 
     <div class="field" id="field-bd-equipment">
-      <span class="field-label">Оборудование</span>
-      <button type="button" class="select-trigger" id="bd-equipment-trigger">
+      <span class="field-label" id="label-bd-equipment">Оборудование</span>
+      <button type="button" class="select-trigger" id="bd-equipment-trigger" aria-labelledby="label-bd-equipment bd-equipment-trigger-text">
         <span class="select-trigger-text is-placeholder" id="bd-equipment-trigger-text">Выберите оборудование</span>
         <span class="select-chevron">&#9662;</span>
       </button>
@@ -646,17 +646,17 @@
         <button type="button" class="select-option" data-value="__other">Другое</button>
       </div>
       <div id="bd-equipment-other-wrap" style="margin-top: 10px;" hidden>
-        <input type="text" id="bd-equipment-other" placeholder="Название оборудования">
+        <input type="text" id="bd-equipment-other" placeholder="Название оборудования" aria-label="Название оборудования">
       </div>
     </div>
 
     <div class="field" id="field-bd-cause">
-      <span class="field-label">Причина остановки</span>
+      <label class="field-label" for="bd-cause-input">Причина остановки</label>
       <input type="text" id="bd-cause-input" placeholder="Например: разболтался крепёж">
     </div>
 
     <div class="field" id="field-bd-start">
-      <span class="field-label">Время остановки (начало ремонта)</span>
+      <label class="field-label" for="bd-start-input">Время остановки (начало ремонта)</label>
       <div class="datetime-row">
         <input type="datetime-local" id="bd-start-input">
         <button type="button" class="datetime-confirm" data-target="bd-start-input" aria-label="Подтвердить дату и время">&#10003;</button>
@@ -672,7 +672,7 @@
     </label>
 
     <div class="field" id="field-bd-end" hidden>
-      <span class="field-label">Время окончания ремонта</span>
+      <label class="field-label" for="bd-end-input">Время окончания ремонта</label>
       <div class="datetime-row">
         <input type="datetime-local" id="bd-end-input">
         <button type="button" class="datetime-confirm" data-target="bd-end-input" aria-label="Подтвердить дату и время">&#10003;</button>
@@ -680,12 +680,12 @@
     </div>
 
     <div class="field" id="field-bd-closed-by" hidden>
-      <span class="field-label">Фамилия закончившего ремонт</span>
+      <label class="field-label" for="bd-closed-by-input">Фамилия закончившего ремонт</label>
       <input type="text" id="bd-closed-by-input" placeholder="Фамилия">
     </div>
 
     <div class="field" id="field-bd-operator">
-      <span class="field-label">Фамилия начавшего ремонт</span>
+      <label class="field-label" for="bd-operator-input">Фамилия начавшего ремонт</label>
       <input type="text" id="bd-operator-input" placeholder="Фамилия оператора">
     </div>
 
@@ -1173,13 +1173,15 @@
 
       var endWrap = document.createElement('div');
       endWrap.className = 'field';
-      var endLabel = document.createElement('span');
+      var endLabel = document.createElement('label');
       endLabel.className = 'field-label';
+      endLabel.htmlFor = 'end-input-' + record.id;
       endLabel.textContent = 'Время окончания ремонта';
       var endRow = document.createElement('div');
       endRow.className = 'datetime-row';
       var endInput = document.createElement('input');
       endInput.type = 'datetime-local';
+      endInput.id = 'end-input-' + record.id;
       var endConfirmBtn = document.createElement('button');
       endConfirmBtn.type = 'button';
       endConfirmBtn.className = 'datetime-confirm';
@@ -1194,11 +1196,13 @@
       var closedByWrap = document.createElement('div');
       closedByWrap.className = 'field';
       closedByWrap.style.marginTop = '14px';
-      var closedByLabel = document.createElement('span');
+      var closedByLabel = document.createElement('label');
       closedByLabel.className = 'field-label';
+      closedByLabel.htmlFor = 'closed-by-input-' + record.id;
       closedByLabel.textContent = 'Фамилия закончившего ремонт';
       var closedByInput = document.createElement('input');
       closedByInput.type = 'text';
+      closedByInput.id = 'closed-by-input-' + record.id;
       closedByInput.placeholder = 'Фамилия';
       closedByWrap.appendChild(closedByLabel);
       closedByWrap.appendChild(closedByInput);
