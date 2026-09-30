@@ -26,6 +26,7 @@
     --text-muted: #8b95a1;
     --accent: #e0a83f;
     --accent-text: #14181c;
+    --danger: #d9704f;
     --radius: 12px;
     --max-w: 720px;
     --max-w-wide: 1100px;
@@ -62,14 +63,22 @@
   h1 {
     font-size: clamp(2.2rem, 6.5vw, 3.4rem);
     line-height: 1.1;
-    margin: 0 0 10px;
+    margin: 0 0 28px;
     color: var(--accent);
     font-weight: 400;
+    text-align: center;
   }
 
   h2 {
-    font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+    font-size: clamp(1.15rem, 3vw, 1.4rem);
+    font-weight: 600;
+    color: var(--accent);
     margin: 0 0 20px;
+  }
+
+  h2::before {
+    content: "• ";
+    color: var(--accent);
   }
 
   p {
@@ -83,10 +92,15 @@
   }
 
   .tagline {
-    color: var(--text);
+    color: var(--accent);
     font-size: clamp(1.15rem, 3vw, 1.4rem);
     font-weight: 600;
     margin: 0 0 20px;
+  }
+
+  .tagline::before {
+    content: "• ";
+    color: var(--accent);
   }
 
   .btn {
@@ -179,9 +193,92 @@
     outline-offset: 2px;
   }
 
+  input.input-error,
+  .phone-code-trigger.input-error {
+    border-color: var(--danger);
+  }
+
+  .field-error-msg {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin: -10px 0 4px;
+  }
+
   .cta-fallback {
     margin-top: 20px;
   }
+
+  .phone-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .phone-row input[type="tel"] {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .phone-code-wrap {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .phone-code-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    background: var(--bg-panel);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 12px 10px;
+    color: var(--text);
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .phone-code-trigger:hover, .phone-code-trigger:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .phone-code-chevron {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+  }
+
+  .phone-code-options {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 5;
+    background: var(--bg-panel);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    overflow-y: auto;
+    max-height: 260px;
+    min-width: 230px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  .phone-code-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 0.92rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .phone-code-option:last-child { border-bottom: none; }
+  .phone-code-option:hover, .phone-code-option:focus-visible { background: var(--bg); outline: none; }
 
   /* ZONE PHOTOS — framed, rounded corners, same treatment on both zones */
   .zone-photo {
@@ -298,9 +395,23 @@
           <input id="cta-name" name="name" type="text" required>
         </div>
         <div>
-          <label for="cta-contact">Как связаться (телефон, telegram, почта)</label>
-          <input id="cta-contact" name="contact" type="text" required>
+          <label for="cta-contact">Как связаться (telegram, почта)</label>
+          <input id="cta-contact" name="contact" type="text">
         </div>
+        <div>
+          <label for="cta-phone">Телефон</label>
+          <div class="phone-row">
+            <div class="phone-code-wrap">
+              <button type="button" class="phone-code-trigger" id="phone-code-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span id="phone-code-text">Россия +7</span>
+                <span class="phone-code-chevron">▾</span>
+              </button>
+              <div class="phone-code-options" id="phone-code-options" hidden></div>
+            </div>
+            <input id="cta-phone" name="phone" type="tel" inputmode="numeric" placeholder="900 123-45-67">
+          </div>
+        </div>
+        <p class="field-error-msg" id="contact-or-phone-error" hidden>Укажите телефон или способ связи — telegram, почту.</p>
         <button type="submit" class="btn">Оставить контакт</button>
       </form>
       <p class="cta-fallback">Если письмо не открылось — напишите на <a href="mailto:myrdoc911@gmail.com">myrdoc911@gmail.com</a>.</p>
@@ -311,27 +422,110 @@
 (function () {
   var TARGET_EMAIL = 'myrdoc911@gmail.com';
 
-  function buildMailtoHref(name, contact) {
+  function buildMailtoHref(name, contact, phone) {
     var subject = encodeURIComponent('Журнал смены — хочу попробовать');
-    var body = encodeURIComponent('Имя: ' + name + '\nКак связаться: ' + contact);
+    var lines = ['Имя: ' + name, 'Как связаться: ' + contact];
+    if (phone) lines.push('Телефон: ' + phone);
+    var body = encodeURIComponent(lines.join('\n'));
     return 'mailto:' + TARGET_EMAIL + '?subject=' + subject + '&body=' + body;
   }
 
   window.buildMailtoHref = buildMailtoHref;
 
+  // ---------- Phone country code picker ----------
+  var COUNTRIES = [
+    { name: 'Россия', code: '+7' },
+    { name: 'Казахстан', code: '+7' },
+    { name: 'Беларусь', code: '+375' },
+    { name: 'Украина', code: '+380' },
+    { name: 'Узбекистан', code: '+998' },
+    { name: 'Армения', code: '+374' },
+    { name: 'Азербайджан', code: '+994' },
+    { name: 'Киргизия', code: '+996' },
+    { name: 'Таджикистан', code: '+992' },
+    { name: 'Молдова', code: '+373' },
+    { name: 'Грузия', code: '+995' },
+    { name: 'Германия', code: '+49' },
+    { name: 'Польша', code: '+48' },
+    { name: 'Турция', code: '+90' },
+    { name: 'США', code: '+1' },
+    { name: 'Китай', code: '+86' }
+  ];
+
+  var phoneTrigger = document.getElementById('phone-code-trigger');
+  var phoneOptions = document.getElementById('phone-code-options');
+  var phoneCodeText = document.getElementById('phone-code-text');
+  var selectedPhoneCode = COUNTRIES[0].code;
+
+  COUNTRIES.forEach(function (country) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'phone-code-option';
+    btn.textContent = country.name + ' ' + country.code;
+    btn.addEventListener('click', function () {
+      selectedPhoneCode = country.code;
+      phoneCodeText.textContent = country.name + ' ' + country.code;
+      phoneOptions.hidden = true;
+      phoneTrigger.setAttribute('aria-expanded', 'false');
+    });
+    phoneOptions.appendChild(btn);
+  });
+
+  phoneTrigger.addEventListener('click', function () {
+    var willOpen = phoneOptions.hidden;
+    phoneOptions.hidden = !willOpen;
+    phoneTrigger.setAttribute('aria-expanded', String(willOpen));
+  });
+
+  document.addEventListener('click', function (evt) {
+    if (!phoneOptions.hidden && !phoneTrigger.contains(evt.target) && !phoneOptions.contains(evt.target)) {
+      phoneOptions.hidden = true;
+      phoneTrigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
   var form = document.getElementById('contact-form');
+  var nameInput = document.getElementById('cta-name');
+  var contactInput = document.getElementById('cta-contact');
+  var phoneInput = document.getElementById('cta-phone');
+  var contactOrPhoneError = document.getElementById('contact-or-phone-error');
+
+  function clearContactOrPhoneError() {
+    contactInput.classList.remove('input-error');
+    phoneInput.classList.remove('input-error');
+    phoneTrigger.classList.remove('input-error');
+    contactOrPhoneError.hidden = true;
+  }
+
+  [contactInput, phoneInput].forEach(function (el) {
+    el.addEventListener('input', function () {
+      if (contactInput.value.trim() || phoneInput.value.trim()) clearContactOrPhoneError();
+    });
+  });
+
   form.addEventListener('submit', function (event) {
     event.preventDefault();
-    var name = document.getElementById('cta-name').value.trim();
-    var contact = document.getElementById('cta-contact').value.trim();
+    var name = nameInput.value.trim();
+    var contact = contactInput.value.trim();
+    var phoneDigits = phoneInput.value.trim();
+    var phone = phoneDigits ? (selectedPhoneCode + ' ' + phoneDigits) : '';
 
-    if (!name || !contact) {
-      var emptyField = !name ? document.getElementById('cta-name') : document.getElementById('cta-contact');
-      emptyField.focus();
+    if (!name) {
+      nameInput.focus();
       return;
     }
 
-    window.location.href = buildMailtoHref(name, contact);
+    if (!contact && !phoneDigits) {
+      contactInput.classList.add('input-error');
+      phoneInput.classList.add('input-error');
+      phoneTrigger.classList.add('input-error');
+      contactOrPhoneError.hidden = false;
+      contactInput.focus();
+      return;
+    }
+
+    clearContactOrPhoneError();
+    window.location.href = buildMailtoHref(name, contact, phone);
   });
 })();
 

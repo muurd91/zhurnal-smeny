@@ -622,6 +622,7 @@
     </div>
 
     <div class="tab-panel" id="tab-equipment" hidden>
+      <button type="button" id="add-equipment-btn" class="btn btn-secondary" style="margin-bottom: 16px;">+ Добавить оборудование</button>
       <div class="list" id="equipment-list"></div>
     </div>
   </section>
@@ -640,10 +641,7 @@
         <span class="select-chevron">&#9662;</span>
       </button>
       <div class="select-options" id="bd-equipment-options" hidden>
-        <button type="button" class="select-option" data-value="Станок 1">Станок 1</button>
-        <button type="button" class="select-option" data-value="Станок 2">Станок 2</button>
-        <button type="button" class="select-option" data-value="Станок 3">Станок 3</button>
-        <button type="button" class="select-option" data-value="__other">Другое</button>
+        <button type="button" class="select-option" data-value="__other" id="bd-equipment-other-btn">Другое</button>
       </div>
       <div id="bd-equipment-other-wrap" style="margin-top: 10px;" hidden>
         <input type="text" id="bd-equipment-other" placeholder="Название оборудования" aria-label="Название оборудования">
@@ -743,6 +741,25 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-add-equipment" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Оборудование</p>
+    <h2>Добавить оборудование</h2>
+    <div class="field" id="field-new-equip-name">
+      <label class="field-label" for="new-equip-name-input">Название</label>
+      <input type="text" id="new-equip-name-input" placeholder="Например: Станок 4">
+    </div>
+    <div class="field" id="field-new-equip-marking">
+      <label class="field-label" for="new-equip-marking-input">Маркировка</label>
+      <input type="text" id="new-equip-marking-input" placeholder="Например: инв. №1234">
+    </div>
+    <div class="modal-actions">
+      <button type="button" id="save-new-equipment-btn" class="btn">Добавить</button>
+      <button type="button" id="cancel-new-equipment-btn" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   var STORAGE_KEY = 'zhurnalSmenyDemo';
@@ -752,15 +769,16 @@
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [] };
+      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [] };
       var parsed = JSON.parse(raw);
       return {
         activeShift: parsed.activeShift || null,
         history: parsed.history || [],
-        carriedBreakdowns: parsed.carriedBreakdowns || []
+        carriedBreakdowns: parsed.carriedBreakdowns || [],
+        customEquipment: parsed.customEquipment || []
       };
     } catch (e) {
-      return { activeShift: null, history: [], carriedBreakdowns: [] };
+      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [] };
     }
   }
 
@@ -790,6 +808,15 @@
 
   function minutesBetween(startIso, endIso) {
     return Math.max(0, Math.round((new Date(endIso) - new Date(startIso)) / 60000));
+  }
+
+  function getAllEquipmentNames() {
+    return EQUIPMENT_OPTIONS.concat(state.customEquipment.map(function (e) { return e.name; }));
+  }
+
+  function findEquipmentMarking(name) {
+    var match = state.customEquipment.filter(function (e) { return e.name === name; })[0];
+    return match ? match.marking : null;
   }
 
   // ---------- Screens ----------
@@ -837,8 +864,11 @@
     var trigger = document.getElementById(triggerId);
     var optionsPanel = document.getElementById(optionsId);
     var textEl = document.getElementById(textId);
-    var options = optionsPanel.querySelectorAll('.select-option');
     var selected = null;
+
+    function options() {
+      return optionsPanel.querySelectorAll('.select-option');
+    }
 
     function close() {
       optionsPanel.hidden = true;
@@ -857,16 +887,17 @@
       }
     });
 
-    options.forEach(function (opt) {
-      opt.addEventListener('click', function () {
-        options.forEach(function (o) { o.classList.remove('is-selected'); });
-        opt.classList.add('is-selected');
-        selected = opt.getAttribute('data-value');
-        textEl.textContent = opt.textContent;
-        textEl.classList.remove('is-placeholder');
-        close();
-        onChange(selected);
-      });
+    // Delegated so options added after setup (e.g. newly registered equipment) work without re-binding.
+    optionsPanel.addEventListener('click', function (evt) {
+      var opt = evt.target.closest('.select-option');
+      if (!opt) return;
+      options().forEach(function (o) { o.classList.remove('is-selected'); });
+      opt.classList.add('is-selected');
+      selected = opt.getAttribute('data-value');
+      textEl.textContent = opt.textContent;
+      textEl.classList.remove('is-placeholder');
+      close();
+      onChange(selected);
     });
 
     return {
@@ -875,13 +906,13 @@
         selected = null;
         textEl.textContent = placeholder;
         textEl.classList.add('is-placeholder');
-        options.forEach(function (o) { o.classList.remove('is-selected'); });
+        options().forEach(function (o) { o.classList.remove('is-selected'); });
         close();
       },
       select: function (value) {
         selected = value;
         var match = null;
-        options.forEach(function (o) {
+        options().forEach(function (o) {
           var isMatch = o.getAttribute('data-value') === value;
           o.classList.toggle('is-selected', isMatch);
           if (isMatch) match = o;
@@ -955,12 +986,29 @@
 
   // ---------- Breakdown modal ----------
   var modalBreakdown = document.getElementById('modal-breakdown');
+  function renderEquipmentSelectOptions() {
+    var panel = document.getElementById('bd-equipment-options');
+    var otherBtn = document.getElementById('bd-equipment-other-btn');
+    panel.querySelectorAll('.select-option[data-dynamic]').forEach(function (btn) { btn.remove(); });
+    getAllEquipmentNames().forEach(function (name) {
+      var marking = findEquipmentMarking(name);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'select-option';
+      btn.setAttribute('data-dynamic', '1');
+      btn.setAttribute('data-value', name);
+      btn.textContent = marking ? name + ' — ' + marking : name;
+      panel.insertBefore(btn, otherBtn);
+    });
+  }
+
   var bdEquipmentGroup = setupSelectDropdown('bd-equipment-trigger', 'bd-equipment-options', 'bd-equipment-trigger-text', 'Выберите оборудование', function (value) {
     clearFieldError(document.getElementById('field-bd-equipment'));
     var otherWrap = document.getElementById('bd-equipment-other-wrap');
     otherWrap.hidden = value !== '__other';
     if (value === '__other') document.getElementById('bd-equipment-other').focus();
   });
+  renderEquipmentSelectOptions();
 
   var bdCauseInput = document.getElementById('bd-cause-input');
   var bdStartInput = document.getElementById('bd-start-input');
@@ -996,7 +1044,7 @@
     if (existing) {
       editingBreakdownId = existing.id;
       document.getElementById('breakdown-modal-title').textContent = 'Завершение ремонта';
-      var isKnown = EQUIPMENT_OPTIONS.indexOf(existing.equipment) !== -1;
+      var isKnown = getAllEquipmentNames().indexOf(existing.equipment) !== -1;
       bdEquipmentGroup.select(isKnown ? existing.equipment : '__other');
       if (!isKnown) {
         document.getElementById('bd-equipment-other-wrap').hidden = false;
@@ -1457,7 +1505,7 @@
       });
     });
 
-    var names = EQUIPMENT_OPTIONS.slice();
+    var names = getAllEquipmentNames();
     allBreakdowns.forEach(function (record) {
       if (names.indexOf(record.equipment) === -1) names.push(record.equipment);
     });
@@ -1476,6 +1524,13 @@
       title.className = 'row-title';
       title.textContent = name;
       left.appendChild(title);
+      var marking = findEquipmentMarking(name);
+      if (marking) {
+        var markingEl = document.createElement('div');
+        markingEl.className = 'row-sub';
+        markingEl.textContent = marking;
+        left.appendChild(markingEl);
+      }
       var stats = document.createElement('div');
       stats.className = 'equip-stats';
       stats.textContent = items.length + ' поломок · ' + totalMinutes + ' мин простоя';
@@ -1533,6 +1588,44 @@
 
   document.getElementById('close-equipment-list-btn').addEventListener('click', function () {
     modalEquipmentList.hidden = true;
+  });
+
+  // ---------- Add equipment modal ----------
+  var modalAddEquipment = document.getElementById('modal-add-equipment');
+  var newEquipNameInput = document.getElementById('new-equip-name-input');
+  var newEquipMarkingInput = document.getElementById('new-equip-marking-input');
+
+  document.getElementById('add-equipment-btn').addEventListener('click', function () {
+    newEquipNameInput.value = '';
+    newEquipMarkingInput.value = '';
+    clearFieldError(document.getElementById('field-new-equip-name'));
+    modalAddEquipment.hidden = false;
+  });
+
+  document.getElementById('cancel-new-equipment-btn').addEventListener('click', function () {
+    modalAddEquipment.hidden = true;
+  });
+
+  document.getElementById('save-new-equipment-btn').addEventListener('click', function () {
+    var name = newEquipNameInput.value.trim();
+    var marking = newEquipMarkingInput.value.trim();
+    var fieldEl = document.getElementById('field-new-equip-name');
+
+    var exists = getAllEquipmentNames().some(function (existing) {
+      return existing.toLowerCase() === name.toLowerCase();
+    });
+
+    if (!name || exists) {
+      setFieldError(fieldEl);
+      return;
+    }
+    clearFieldError(fieldEl);
+
+    state.customEquipment.push({ name: name, marking: marking || null });
+    saveState();
+    renderEquipmentSelectOptions();
+    renderEquipment();
+    modalAddEquipment.hidden = true;
   });
 
   function renderMain() {
