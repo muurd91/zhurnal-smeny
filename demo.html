@@ -523,6 +523,25 @@
 
   .shift-chevron.is-open { transform: translateY(-50%) rotate(180deg); }
 
+  .shift-row { display: flex; align-items: stretch; gap: 8px; }
+  .shift-row .shift-header { flex: 1; min-width: 0; }
+
+  .shift-delete-btn {
+    flex: 0 0 auto;
+    width: 44px;
+    border-radius: 10px;
+    border: 1px solid rgba(217, 112, 79, 0.3);
+    background: rgba(217, 112, 79, 0.08);
+    color: var(--danger);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .shift-delete-btn:hover { background: rgba(217, 112, 79, 0.18); border-color: var(--danger); }
+  .shift-delete-btn:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+
   .sub-list {
     margin: 8px 0 0 16px;
     padding-left: 14px;
@@ -858,6 +877,18 @@
     <div class="modal-actions">
       <button type="button" id="confirm-end-btn" class="btn btn-danger">Да, закончить смену</button>
       <button type="button" id="cancel-end-btn" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-delete-shift-confirm" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Подтверждение</p>
+    <h2>Удалить смену из истории?</h2>
+    <p>Вместе со сменой удалятся все записи о поломках в ней. Отменить это действие будет нельзя.</p>
+    <div class="modal-actions">
+      <button type="button" id="confirm-delete-shift-btn" class="btn btn-danger">Да, удалить</button>
+      <button type="button" id="cancel-delete-shift-btn" class="btn btn-secondary">Отмена</button>
     </div>
   </div>
 </div>
@@ -1695,6 +1726,9 @@
     shifts.forEach(function (shift) {
       var wrap = document.createElement('div');
 
+      var headerRow = document.createElement('div');
+      headerRow.className = 'shift-row';
+
       var header = document.createElement('button');
       header.type = 'button';
       header.className = 'row-card shift-header';
@@ -1710,6 +1744,22 @@
       header.appendChild(title);
       header.appendChild(sub);
       header.appendChild(chevron);
+      headerRow.appendChild(header);
+
+      if (shift !== state.activeShift) {
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'shift-delete-btn';
+        delBtn.setAttribute('aria-label', 'Удалить смену');
+        delBtn.title = 'Удалить смену';
+        delBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+        delBtn.addEventListener('click', function (evt) {
+          evt.stopPropagation();
+          shiftIdPendingDelete = shift.id;
+          modalDeleteShiftConfirm.hidden = false;
+        });
+        headerRow.appendChild(delBtn);
+      }
 
       var body = document.createElement('div');
       body.className = 'sub-list';
@@ -1751,11 +1801,29 @@
         chevron.classList.toggle('is-open', !body.hidden);
       });
 
-      wrap.appendChild(header);
+      wrap.appendChild(headerRow);
       wrap.appendChild(body);
       container.appendChild(wrap);
     });
   }
+
+  var modalDeleteShiftConfirm = document.getElementById('modal-delete-shift-confirm');
+  var shiftIdPendingDelete = null;
+
+  document.getElementById('confirm-delete-shift-btn').addEventListener('click', function () {
+    if (shiftIdPendingDelete) {
+      state.history = state.history.filter(function (s) { return s.id !== shiftIdPendingDelete; });
+      saveState();
+    }
+    shiftIdPendingDelete = null;
+    modalDeleteShiftConfirm.hidden = true;
+    renderHistory();
+  });
+
+  document.getElementById('cancel-delete-shift-btn').addEventListener('click', function () {
+    shiftIdPendingDelete = null;
+    modalDeleteShiftConfirm.hidden = true;
+  });
 
   // ---------- Rendering: equipment ----------
   function buildEquipmentRow(name, allBreakdowns) {
