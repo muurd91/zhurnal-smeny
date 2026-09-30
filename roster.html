@@ -107,6 +107,22 @@
 
   .list-item button:hover { text-decoration: underline; }
 
+  .list-item button.edit-btn { color: var(--accent); }
+
+  .list-item .item-actions { display: flex; align-items: center; flex: 0 0 auto; }
+
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0 10px;
+    height: 42px;
+  }
+
+  .btn-link:hover { color: var(--text); text-decoration: underline; }
+
   .empty-note { color: var(--text-muted); font-size: 0.85rem; padding: 6px 0 0; }
 
   .status-msg { font-size: 0.85rem; margin-top: 10px; min-height: 1.2em; }
@@ -167,6 +183,7 @@
         </select>
       </div>
       <button type="button" class="btn" id="add-equip-btn" style="align-self: flex-end;">Добавить</button>
+      <button type="button" class="btn-link" id="cancel-equip-edit-btn" style="align-self: flex-end; display: none;">Отмена</button>
     </div>
     <div id="equip-status" class="status-msg"></div>
     <div class="list" id="equip-list"></div>
@@ -342,6 +359,29 @@
   var equipMarkingInput = document.getElementById('equip-marking-input');
   var equipList = document.getElementById('equip-list');
   var equipStatus = document.getElementById('equip-status');
+  var addEquipBtn = document.getElementById('add-equip-btn');
+  var cancelEquipEditBtn = document.getElementById('cancel-equip-edit-btn');
+  var editingEquipIndex = null;
+
+  function startEquipEdit(index) {
+    var eq = state.customEquipment[index];
+    editingEquipIndex = index;
+    equipNameInput.value = eq.name;
+    equipMarkingInput.value = eq.marking || '';
+    equipClassSelect.value = eq.class || '';
+    addEquipBtn.textContent = 'Сохранить';
+    cancelEquipEditBtn.style.display = '';
+    equipNameInput.focus();
+  }
+
+  function stopEquipEdit() {
+    editingEquipIndex = null;
+    equipNameInput.value = '';
+    equipMarkingInput.value = '';
+    equipClassSelect.value = '';
+    addEquipBtn.textContent = 'Добавить';
+    cancelEquipEditBtn.style.display = 'none';
+  }
 
   function renderEquipment() {
     equipList.innerHTML = '';
@@ -364,21 +404,33 @@
         meta.textContent = metaText;
         label.appendChild(meta);
       }
+      var actions = document.createElement('span');
+      actions.className = 'item-actions';
+      var edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'edit-btn';
+      edit.textContent = 'Изменить';
+      edit.addEventListener('click', function () {
+        startEquipEdit(index);
+      });
       var del = document.createElement('button');
       del.type = 'button';
       del.textContent = 'Удалить';
       del.addEventListener('click', function () {
         state.customEquipment.splice(index, 1);
         saveState();
+        if (editingEquipIndex === index) stopEquipEdit();
         renderEquipment();
       });
+      actions.appendChild(edit);
+      actions.appendChild(del);
       item.appendChild(label);
-      item.appendChild(del);
+      item.appendChild(actions);
       equipList.appendChild(item);
     });
   }
 
-  document.getElementById('add-equip-btn').addEventListener('click', function () {
+  addEquipBtn.addEventListener('click', function () {
     var name = equipNameInput.value.trim();
     var marking = equipMarkingInput.value.trim();
     var cls = equipClassSelect.value;
@@ -386,23 +438,37 @@
       showStatus(equipStatus, 'Введите название оборудования.', 'error');
       return;
     }
-    var all = EQUIPMENT_OPTIONS.concat(state.customEquipment.map(function (e) { return e.name; }));
+    var others = state.customEquipment
+      .filter(function (e, i) { return i !== editingEquipIndex; })
+      .map(function (e) { return e.name; });
+    var all = EQUIPMENT_OPTIONS.concat(others);
     var exists = all.some(function (existing) { return existing.toLowerCase() === name.toLowerCase(); });
     if (exists) {
       showStatus(equipStatus, 'Такое оборудование уже есть в списке.', 'error');
       return;
     }
-    state.customEquipment.push({ name: name, marking: marking || null, class: cls || null });
-    saveState();
-    equipNameInput.value = '';
-    equipMarkingInput.value = '';
-    equipClassSelect.value = '';
-    showStatus(equipStatus, 'Добавлено: ' + name, 'ok');
+    if (editingEquipIndex !== null) {
+      state.customEquipment[editingEquipIndex] = { name: name, marking: marking || null, class: cls || null };
+      saveState();
+      showStatus(equipStatus, 'Сохранено: ' + name, 'ok');
+      stopEquipEdit();
+    } else {
+      state.customEquipment.push({ name: name, marking: marking || null, class: cls || null });
+      saveState();
+      equipNameInput.value = '';
+      equipMarkingInput.value = '';
+      equipClassSelect.value = '';
+      showStatus(equipStatus, 'Добавлено: ' + name, 'ok');
+    }
     renderEquipment();
   });
 
+  cancelEquipEditBtn.addEventListener('click', function () {
+    stopEquipEdit();
+  });
+
   equipNameInput.addEventListener('keydown', function (evt) {
-    if (evt.key === 'Enter') document.getElementById('add-equip-btn').click();
+    if (evt.key === 'Enter') addEquipBtn.click();
   });
 
   renderMasters();
