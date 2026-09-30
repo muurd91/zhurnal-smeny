@@ -1,3 +1,5 @@
 .playwright-mcp/
 .claude/
 images/*.png
+!images/amina-mark.png
+_scratch/

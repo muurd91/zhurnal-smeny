@@ -29,6 +29,7 @@
     --accent-text: #14181c;
     --danger: #d9704f;
     --radius: 12px;
+    --radius-lg: 20px;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -44,6 +45,25 @@
     padding-top: 64px;
   }
 
+  .brand-watermark {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .brand-watermark img {
+    width: clamp(500px, 70vw, 1100px);
+    height: auto;
+    filter:
+      drop-shadow(-1.5px -1.5px 1px rgba(255, 255, 255, 0.06))
+      drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.55));
+  }
+
   .top-bar {
     position: fixed;
     top: 0;
@@ -53,6 +73,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     padding: 0 20px;
     background: rgba(20, 24, 28, 0.92);
     backdrop-filter: blur(4px);
@@ -60,9 +81,11 @@
   }
 
   .back-link {
+    flex: 0 0 auto;
     color: var(--text-muted);
     text-decoration: none;
     font-size: 0.9rem;
+    white-space: nowrap;
   }
 
   .back-link:hover { color: var(--text); }
@@ -125,7 +148,7 @@
     color: var(--accent-text);
     font-weight: 600;
     padding: 13px 24px;
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     border: none;
     text-decoration: none;
     font-size: 0.98rem;
@@ -361,6 +384,7 @@
   }
 
   .tab-btn {
+    flex: 1;
     background: none;
     border: none;
     color: var(--text-muted);
@@ -368,7 +392,7 @@
     padding: 10px 4px 12px;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    margin-right: 14px;
+    text-align: center;
   }
 
   .tab-btn.is-active {
@@ -380,9 +404,22 @@
   .tab-panel[hidden] { display: none; }
 
   .shift-meta {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-bottom: 18px;
+    display: none;
+    min-width: 0;
+    max-width: 100%;
+    background: var(--text);
+    border-radius: 999px;
+    padding: 8px 18px;
+    color: var(--bg);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shift-meta.is-visible {
+    display: inline-block;
   }
 
   .list { display: grid; gap: 10px; margin-top: 16px; }
@@ -536,12 +573,19 @@
     .card, .modal-card { padding: 20px; }
     .equip-row { flex-direction: column; align-items: flex-start; }
     .equip-stats { text-align: left; }
+    .back-link-text { display: none; }
+    .shift-meta { padding: 8px 14px; }
+    .brand-watermark img { width: clamp(300px, 100vw, 460px); }
   }
 </style>
 </head>
 <body>
+<div class="brand-watermark" aria-hidden="true">
+  <img src="images/amina-mark.png" alt="">
+</div>
 <div class="top-bar">
-  <a class="back-link" href="index.html">&larr; Журнал смены</a>
+  <a class="back-link" href="index.html">&larr; <span class="back-link-text">Журнал смены</span></a>
+  <div class="shift-meta" id="shift-meta-line"></div>
   <button type="button" id="end-shift-btn" class="btn btn-danger btn-small top-end-btn">Закончить смену</button>
 </div>
 
@@ -571,10 +615,7 @@
       <div class="field" id="field-shift-master">
         <span class="field-label" id="label-shift-master">Фамилия мастера</span>
         <div class="chip-row" data-chip-group="shiftMaster" role="group" aria-labelledby="label-shift-master">
-          <button type="button" class="chip" data-value="Иванов">Иванов</button>
-          <button type="button" class="chip" data-value="Петров">Петров</button>
-          <button type="button" class="chip" data-value="Сидоров">Сидоров</button>
-          <button type="button" class="chip" data-value="__other">Другое</button>
+          <button type="button" class="chip" data-value="__other" id="shift-master-other-btn">Другое</button>
         </div>
         <div id="shift-master-other-wrap" style="margin-top: 10px;" hidden>
           <input type="text" id="shift-master-other" placeholder="Фамилия мастера" aria-label="Фамилия мастера">
@@ -604,8 +645,6 @@
   <div class="app">
 
   <section id="screen-main" hidden>
-    <div class="shift-meta" id="shift-meta-line"></div>
-
     <div class="tabs">
       <button type="button" class="tab-btn is-active" data-tab="current">Текущая смена</button>
       <button type="button" class="tab-btn" data-tab="history">История поломок</button>
@@ -618,11 +657,12 @@
     </div>
 
     <div class="tab-panel" id="tab-history" hidden>
+      <button type="button" id="export-data-btn" class="btn" style="margin-bottom: 16px;">⭳ Скачать резервную копию (JSON)</button>
       <div class="list" id="history-list"></div>
     </div>
 
     <div class="tab-panel" id="tab-equipment" hidden>
-      <button type="button" id="add-equipment-btn" class="btn btn-secondary" style="margin-bottom: 16px;">+ Добавить оборудование</button>
+      <button type="button" id="add-equipment-btn" class="btn" style="margin-bottom: 16px;">+ Добавить оборудование</button>
       <div class="list" id="equipment-list"></div>
     </div>
   </section>
@@ -648,9 +688,28 @@
       </div>
     </div>
 
-    <div class="field" id="field-bd-cause">
-      <label class="field-label" for="bd-cause-input">Причина остановки</label>
-      <input type="text" id="bd-cause-input" placeholder="Например: разболтался крепёж">
+    <div class="field" id="field-bd-category">
+      <span class="field-label" id="label-bd-category">Категория причины</span>
+      <button type="button" class="select-trigger" id="bd-category-trigger" aria-labelledby="label-bd-category bd-category-trigger-text">
+        <span class="select-trigger-text is-placeholder" id="bd-category-trigger-text">Выберите категорию</span>
+        <span class="select-chevron">&#9662;</span>
+      </button>
+      <div class="select-options" id="bd-category-options" hidden>
+        <button type="button" class="select-option" data-value="Механика">Механика</button>
+        <button type="button" class="select-option" data-value="Электрика">Электрика</button>
+        <button type="button" class="select-option" data-value="Пневматика">Пневматика</button>
+        <button type="button" class="select-option" data-value="Гидравлика">Гидравлика</button>
+        <button type="button" class="select-option" data-value="Материал">Материал</button>
+        <button type="button" class="select-option" data-value="Оснастка">Оснастка</button>
+        <button type="button" class="select-option" data-value="Человеческий фактор">Человеческий фактор</button>
+        <button type="button" class="select-option" data-value="Не установлено">Не установлено</button>
+        <button type="button" class="select-option" data-value="Другое">Другое</button>
+      </div>
+    </div>
+
+    <div class="field" id="field-bd-comment">
+      <label class="field-label" for="bd-comment-input">Комментарий (необязательно)</label>
+      <input type="text" id="bd-comment-input" placeholder="Например: разболтался крепёж узла подачи">
     </div>
 
     <div class="field" id="field-bd-start">
@@ -765,20 +824,22 @@
   var STORAGE_KEY = 'zhurnalSmenyDemo';
 
   var EQUIPMENT_OPTIONS = ['Станок 1', 'Станок 2', 'Станок 3'];
+  var MASTER_OPTIONS = ['Иванов', 'Петров', 'Сидоров'];
 
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [] };
+      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
       var parsed = JSON.parse(raw);
       return {
         activeShift: parsed.activeShift || null,
         history: parsed.history || [],
         carriedBreakdowns: parsed.carriedBreakdowns || [],
-        customEquipment: parsed.customEquipment || []
+        customEquipment: parsed.customEquipment || [],
+        customMasters: parsed.customMasters || []
       };
     } catch (e) {
-      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [] };
+      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
     }
   }
 
@@ -814,9 +875,32 @@
     return EQUIPMENT_OPTIONS.concat(state.customEquipment.map(function (e) { return e.name; }));
   }
 
+  function getAllMasterNames() {
+    return MASTER_OPTIONS.concat(state.customMasters);
+  }
+
+  function renderMasterChipOptions() {
+    var row = document.querySelector('[data-chip-group="shiftMaster"]');
+    var otherBtn = document.getElementById('shift-master-other-btn');
+    row.querySelectorAll('.chip[data-dynamic]').forEach(function (btn) { btn.remove(); });
+    getAllMasterNames().forEach(function (name) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip';
+      btn.setAttribute('data-dynamic', '1');
+      btn.setAttribute('data-value', name);
+      btn.textContent = name;
+      row.insertBefore(btn, otherBtn);
+    });
+  }
+
   function findEquipmentMarking(name) {
     var match = state.customEquipment.filter(function (e) { return e.name === name; })[0];
     return match ? match.marking : null;
+  }
+
+  function breakdownCategoryLine(record) {
+    return record.comment ? record.category + ': ' + record.comment : record.category;
   }
 
   // ---------- Screens ----------
@@ -824,12 +908,14 @@
   var screenShiftForm = document.getElementById('screen-shift-form');
   var screenMain = document.getElementById('screen-main');
   var endShiftTopBtn = document.getElementById('end-shift-btn');
+  var shiftMetaLine = document.getElementById('shift-meta-line');
 
   function showScreen(name) {
     screenStart.hidden = name !== 'start';
     screenShiftForm.hidden = name !== 'shift-form';
     screenMain.hidden = name !== 'main';
     endShiftTopBtn.classList.toggle('is-visible', name === 'main');
+    shiftMetaLine.classList.toggle('is-visible', name === 'main');
   }
 
   // ---------- Chip group helper ----------
@@ -930,6 +1016,7 @@
   var shiftNumberGroup = setupChipGroup(document, 'shiftNumber', function () {
     clearFieldError(document.getElementById('field-shift-number'));
   });
+  renderMasterChipOptions();
   var shiftMasterGroup = setupChipGroup(document, 'shiftMaster', function (value) {
     clearFieldError(document.getElementById('field-shift-master'));
     var otherWrap = document.getElementById('shift-master-other-wrap');
@@ -1010,7 +1097,11 @@
   });
   renderEquipmentSelectOptions();
 
-  var bdCauseInput = document.getElementById('bd-cause-input');
+  var bdCategoryGroup = setupSelectDropdown('bd-category-trigger', 'bd-category-options', 'bd-category-trigger-text', 'Выберите категорию', function () {
+    clearFieldError(document.getElementById('field-bd-category'));
+  });
+
+  var bdCommentInput = document.getElementById('bd-comment-input');
   var bdStartInput = document.getElementById('bd-start-input');
   var bdInProgress = document.getElementById('bd-in-progress');
   var bdEndField = document.getElementById('field-bd-end');
@@ -1030,13 +1121,14 @@
   var editingBreakdownId = null;
 
   function openBreakdownModal(existing) {
-    ['field-bd-equipment', 'field-bd-cause', 'field-bd-start', 'field-bd-end', 'field-bd-closed-by', 'field-bd-operator'].forEach(function (id) {
+    ['field-bd-equipment', 'field-bd-category', 'field-bd-start', 'field-bd-end', 'field-bd-closed-by', 'field-bd-operator'].forEach(function (id) {
       clearFieldError(document.getElementById(id));
     });
     bdEquipmentGroup.reset();
     document.getElementById('bd-equipment-other-wrap').hidden = true;
     document.getElementById('bd-equipment-other').value = '';
-    bdCauseInput.value = '';
+    bdCategoryGroup.reset();
+    bdCommentInput.value = '';
     bdOperatorInput.value = '';
     bdEndInput.value = '';
     bdClosedByInput.value = '';
@@ -1050,7 +1142,8 @@
         document.getElementById('bd-equipment-other-wrap').hidden = false;
         document.getElementById('bd-equipment-other').value = existing.equipment;
       }
-      bdCauseInput.value = existing.cause;
+      bdCategoryGroup.select(existing.category);
+      bdCommentInput.value = existing.comment || '';
       bdStartInput.value = toDatetimeLocalValue(new Date(existing.repairStart));
       bdOperatorInput.value = existing.operator;
       bdInProgress.checked = true;
@@ -1081,7 +1174,8 @@
   document.getElementById('save-breakdown-btn').addEventListener('click', function () {
     var equipChip = bdEquipmentGroup.get();
     var equipment = equipChip === '__other' ? document.getElementById('bd-equipment-other').value.trim() : equipChip;
-    var cause = bdCauseInput.value.trim();
+    var category = bdCategoryGroup.get();
+    var comment = bdCommentInput.value.trim();
     var start = bdStartInput.value;
     var operator = bdOperatorInput.value.trim();
     var inProgress = bdInProgress.checked;
@@ -1090,7 +1184,7 @@
 
     var valid = true;
     if (!equipment) { setFieldError(document.getElementById('field-bd-equipment')); valid = false; }
-    if (!cause) { setFieldError(document.getElementById('field-bd-cause')); valid = false; }
+    if (!category) { setFieldError(document.getElementById('field-bd-category')); valid = false; }
     if (!start) { setFieldError(document.getElementById('field-bd-start')); valid = false; }
     if (!operator) { setFieldError(document.getElementById('field-bd-operator')); valid = false; }
     if (!inProgress && !end) { setFieldError(bdEndField); valid = false; }
@@ -1101,7 +1195,8 @@
     if (editingBreakdownId) {
       var record = shift.breakdowns.filter(function (b) { return b.id === editingBreakdownId; })[0];
       record.equipment = equipment;
-      record.cause = cause;
+      record.category = category;
+      record.comment = comment;
       record.repairStart = new Date(start).toISOString();
       record.operator = operator;
       record.repairEnd = inProgress ? null : new Date(end).toISOString();
@@ -1113,7 +1208,8 @@
       shift.breakdowns.unshift({
         id: uid(),
         equipment: equipment,
-        cause: cause,
+        category: category,
+        comment: comment,
         repairStart: new Date(start).toISOString(),
         repairEnd: inProgress ? null : new Date(end).toISOString(),
         operator: operator,
@@ -1139,7 +1235,8 @@
     var body = document.getElementById('detail-body');
     body.innerHTML = '';
     var lines = [
-      ['Причина', record.cause],
+      ['Категория', record.category],
+      ['Комментарий', record.comment || '—'],
       ['Начало ремонта', formatDateTime(record.repairStart)],
       ['Смена начала ремонта', record.startShiftLabel || '—'],
       ['Начал ремонт', record.operator],
@@ -1197,7 +1294,7 @@
       item.className = 'decision-item';
       var title = document.createElement('div');
       title.className = 'row-title';
-      title.textContent = record.equipment + ' — ' + record.cause;
+      title.textContent = record.equipment + ' — ' + breakdownCategoryLine(record);
       var sub = document.createElement('div');
       sub.className = 'row-sub';
       sub.textContent = 'Начало ремонта: ' + formatDateTime(record.repairStart) + ' · начал ' + record.operator;
@@ -1378,7 +1475,7 @@
       row.className = 'row-card';
       var title = document.createElement('div');
       title.className = 'row-title';
-      title.textContent = record.equipment + ' — ' + record.cause;
+      title.textContent = record.equipment + ' — ' + breakdownCategoryLine(record);
       var sub = document.createElement('div');
       sub.className = 'row-sub';
       sub.textContent = 'Начало ремонта: ' + formatDateTime(record.repairStart) + ' · оператор ' + record.operator;
@@ -1462,7 +1559,7 @@
           row.className = 'sub-row';
           var rTitle = document.createElement('div');
           rTitle.className = 'sub-row-title';
-          rTitle.textContent = record.equipment + ' — ' + record.cause;
+          rTitle.textContent = record.equipment + ' — ' + breakdownCategoryLine(record);
           var rBadge = document.createElement('span');
           if (record.repairEnd) {
             rBadge.className = 'badge badge-done';
@@ -1559,7 +1656,7 @@
       row.className = 'row-card';
       var title = document.createElement('div');
       title.className = 'row-title';
-      title.textContent = record.cause;
+      title.textContent = breakdownCategoryLine(record);
       var sub = document.createElement('div');
       sub.className = 'row-sub';
       sub.textContent = formatDateTime(record.repairStart) + ' · ' + record.startShiftLabel;
@@ -1626,6 +1723,28 @@
     renderEquipmentSelectOptions();
     renderEquipment();
     modalAddEquipment.hidden = true;
+  });
+
+  // ---------- Export / backup ----------
+  document.getElementById('export-data-btn').addEventListener('click', function () {
+    var payload = {
+      exportedAt: new Date().toISOString(),
+      activeShift: state.activeShift,
+      history: state.history,
+      carriedBreakdowns: state.carriedBreakdowns,
+      customEquipment: state.customEquipment,
+      customMasters: state.customMasters
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'zhurnal-smeny-' + stamp + '.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   });
 
   function renderMain() {

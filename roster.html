@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>Журнал смены — список мастеров и оборудования</title>
+<style>
+  :root {
+    --bg: #14181c;
+    --bg-panel: #1c2127;
+    --bg-field: #20262d;
+    --text: #eef1f4;
+    --text-muted: #8b95a1;
+    --accent: #e0a83f;
+    --accent-text: #14181c;
+    --danger: #d9704f;
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.5;
+    padding: 24px 20px 64px;
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  .back-link { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; }
+  .back-link:hover { color: var(--text); }
+
+  h1 { font-size: 1.5rem; margin: 20px 0 6px; }
+  p.lead { color: var(--text-muted); margin: 0 0 28px; font-size: 0.95rem; }
+
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 24px;
+  }
+
+  h2 { font-size: 1.1rem; margin: 0 0 4px; }
+  p.hint { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 18px; }
+
+  .row { display: flex; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+  .row .field { flex: 1; min-width: 160px; }
+
+  label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--bg-field);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 11px 13px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 11px 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    height: 42px;
+  }
+
+  .btn:hover { filter: brightness(1.08); }
+
+  .list { display: grid; gap: 8px; margin-top: 16px; }
+
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-field);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+
+  .list-item .meta { color: var(--text-muted); font-size: 0.82rem; margin-left: 8px; }
+
+  .list-item button {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 0.82rem;
+    padding: 4px 8px;
+  }
+
+  .list-item button:hover { text-decoration: underline; }
+
+  .empty-note { color: var(--text-muted); font-size: 0.85rem; padding: 6px 0 0; }
+
+  .status-msg { font-size: 0.85rem; margin-top: 10px; min-height: 1.2em; }
+  .status-msg.error { color: var(--danger); }
+  .status-msg.ok { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="demo.html">&larr; Журнал смены</a>
+  <h1>Список мастеров и оборудования</h1>
+  <p class="lead">Добавленное здесь сразу появится в списках выбора в журнале — не нужно вводить заново через «Другое».</p>
+
+  <div class="card">
+    <h2>Мастера</h2>
+    <p class="hint">Уже есть по умолчанию: Иванов, Петров, Сидоров.</p>
+    <div class="row">
+      <div class="field">
+        <label for="master-name-input">Фамилия</label>
+        <input type="text" id="master-name-input" placeholder="Например: Красавчиков">
+      </div>
+      <button type="button" class="btn" id="add-master-btn" style="align-self: flex-end;">Добавить</button>
+    </div>
+    <div id="master-status" class="status-msg"></div>
+    <div class="list" id="master-list"></div>
+  </div>
+
+  <div class="card">
+    <h2>Оборудование</h2>
+    <p class="hint">Уже есть по умолчанию: Станок 1, Станок 2, Станок 3.</p>
+    <div class="row">
+      <div class="field">
+        <label for="equip-name-input">Название</label>
+        <input type="text" id="equip-name-input" placeholder="Например: Станок 4">
+      </div>
+      <div class="field">
+        <label for="equip-marking-input">Маркировка</label>
+        <input type="text" id="equip-marking-input" placeholder="Например: инв. №1234">
+      </div>
+      <button type="button" class="btn" id="add-equip-btn" style="align-self: flex-end;">Добавить</button>
+    </div>
+    <div id="equip-status" class="status-msg"></div>
+    <div class="list" id="equip-list"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'zhurnalSmenyDemo';
+  var MASTER_OPTIONS = ['Иванов', 'Петров', 'Сидоров'];
+  var EQUIPMENT_OPTIONS = ['Станок 1', 'Станок 2', 'Станок 3'];
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
+      var parsed = JSON.parse(raw);
+      return {
+        activeShift: parsed.activeShift || null,
+        history: parsed.history || [],
+        carriedBreakdowns: parsed.carriedBreakdowns || [],
+        customEquipment: parsed.customEquipment || [],
+        customMasters: parsed.customMasters || []
+      };
+    } catch (e) {
+      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  var state = loadState();
+
+  function showStatus(el, text, type) {
+    el.textContent = text;
+    el.className = 'status-msg' + (type ? ' ' + type : '');
+    if (text) {
+      setTimeout(function () { if (el.textContent === text) el.textContent = ''; }, 2500);
+    }
+  }
+
+  // ---------- Masters ----------
+  var masterNameInput = document.getElementById('master-name-input');
+  var masterList = document.getElementById('master-list');
+  var masterStatus = document.getElementById('master-status');
+
+  function renderMasters() {
+    masterList.innerHTML = '';
+    if (state.customMasters.length === 0) {
+      var note = document.createElement('p');
+      note.className = 'empty-note';
+      note.textContent = 'Пока ничего не добавлено сверх списка по умолчанию.';
+      masterList.appendChild(note);
+      return;
+    }
+    state.customMasters.forEach(function (name, index) {
+      var item = document.createElement('div');
+      item.className = 'list-item';
+      var label = document.createElement('span');
+      label.textContent = name;
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = 'Удалить';
+      del.addEventListener('click', function () {
+        state.customMasters.splice(index, 1);
+        saveState();
+        renderMasters();
+      });
+      item.appendChild(label);
+      item.appendChild(del);
+      masterList.appendChild(item);
+    });
+  }
+
+  document.getElementById('add-master-btn').addEventListener('click', function () {
+    var name = masterNameInput.value.trim();
+    if (!name) {
+      showStatus(masterStatus, 'Введите фамилию.', 'error');
+      return;
+    }
+    var all = MASTER_OPTIONS.concat(state.customMasters);
+    var exists = all.some(function (existing) { return existing.toLowerCase() === name.toLowerCase(); });
+    if (exists) {
+      showStatus(masterStatus, 'Такой мастер уже есть в списке.', 'error');
+      return;
+    }
+    state.customMasters.push(name);
+    saveState();
+    masterNameInput.value = '';
+    showStatus(masterStatus, 'Добавлено: ' + name, 'ok');
+    renderMasters();
+  });
+
+  masterNameInput.addEventListener('keydown', function (evt) {
+    if (evt.key === 'Enter') document.getElementById('add-master-btn').click();
+  });
+
+  // ---------- Equipment ----------
+  var equipNameInput = document.getElementById('equip-name-input');
+  var equipMarkingInput = document.getElementById('equip-marking-input');
+  var equipList = document.getElementById('equip-list');
+  var equipStatus = document.getElementById('equip-status');
+
+  function renderEquipment() {
+    equipList.innerHTML = '';
+    if (state.customEquipment.length === 0) {
+      var note = document.createElement('p');
+      note.className = 'empty-note';
+      note.textContent = 'Пока ничего не добавлено сверх списка по умолчанию.';
+      equipList.appendChild(note);
+      return;
+    }
+    state.customEquipment.forEach(function (eq, index) {
+      var item = document.createElement('div');
+      item.className = 'list-item';
+      var label = document.createElement('span');
+      label.textContent = eq.name;
+      if (eq.marking) {
+        var meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = eq.marking;
+        label.appendChild(meta);
+      }
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = 'Удалить';
+      del.addEventListener('click', function () {
+        state.customEquipment.splice(index, 1);
+        saveState();
+        renderEquipment();
+      });
+      item.appendChild(label);
+      item.appendChild(del);
+      equipList.appendChild(item);
+    });
+  }
+
+  document.getElementById('add-equip-btn').addEventListener('click', function () {
+    var name = equipNameInput.value.trim();
+    var marking = equipMarkingInput.value.trim();
+    if (!name) {
+      showStatus(equipStatus, 'Введите название оборудования.', 'error');
+      return;
+    }
+    var all = EQUIPMENT_OPTIONS.concat(state.customEquipment.map(function (e) { return e.name; }));
+    var exists = all.some(function (existing) { return existing.toLowerCase() === name.toLowerCase(); });
+    if (exists) {
+      showStatus(equipStatus, 'Такое оборудование уже есть в списке.', 'error');
+      return;
+    }
+    state.customEquipment.push({ name: name, marking: marking || null });
+    saveState();
+    equipNameInput.value = '';
+    equipMarkingInput.value = '';
+    showStatus(equipStatus, 'Добавлено: ' + name, 'ok');
+    renderEquipment();
+  });
+
+  equipNameInput.addEventListener('keydown', function (evt) {
+    if (evt.key === 'Enter') document.getElementById('add-equip-btn').click();
+  });
+
+  renderMasters();
+  renderEquipment();
+})();
+</script>
+</body>
+</html>
