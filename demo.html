@@ -171,6 +171,15 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
+  .tab-actions-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .tab-actions-row .btn { width: auto; flex: 1 1 200px; }
+
   .btn-danger { background: var(--danger); color: #1c0e08; }
 
   .btn-small {
@@ -520,6 +529,17 @@
 
   .equip-stats { text-align: right; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
 
+  .equip-group-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  .equip-group-title:first-child { margin-top: 0; }
+
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -603,15 +623,6 @@
       <p class="eyebrow">Данные смены</p>
       <h1>Заполните данные</h1>
 
-      <div class="field" id="field-shift-number">
-        <span class="field-label" id="label-shift-number">Номер смены</span>
-        <div class="chip-row" data-chip-group="shiftNumber" role="group" aria-labelledby="label-shift-number">
-          <button type="button" class="chip" data-value="1">1</button>
-          <button type="button" class="chip" data-value="2">2</button>
-          <button type="button" class="chip" data-value="3">3</button>
-        </div>
-      </div>
-
       <div class="field" id="field-shift-master">
         <span class="field-label" id="label-shift-master">Фамилия мастера</span>
         <div class="chip-row" data-chip-group="shiftMaster" role="group" aria-labelledby="label-shift-master">
@@ -662,7 +673,10 @@
     </div>
 
     <div class="tab-panel" id="tab-equipment" hidden>
-      <button type="button" id="add-equipment-btn" class="btn" style="margin-bottom: 16px;">+ Добавить оборудование</button>
+      <div class="tab-actions-row">
+        <button type="button" id="add-equipment-btn" class="btn">+ Добавить оборудование</button>
+        <button type="button" id="add-equipment-class-btn" class="btn btn-secondary">+ Добавить класс оборудования</button>
+      </div>
       <div class="list" id="equipment-list"></div>
     </div>
   </section>
@@ -812,9 +826,32 @@
       <label class="field-label" for="new-equip-marking-input">Маркировка</label>
       <input type="text" id="new-equip-marking-input" placeholder="Например: инв. №1234">
     </div>
+    <div class="field" id="field-new-equip-class">
+      <span class="field-label" id="label-new-equip-class">Класс оборудования (необязательно)</span>
+      <button type="button" class="select-trigger" id="new-equip-class-trigger" aria-labelledby="label-new-equip-class new-equip-class-trigger-text">
+        <span class="select-trigger-text is-placeholder" id="new-equip-class-trigger-text">Не выбран</span>
+        <span class="select-chevron">&#9662;</span>
+      </button>
+      <div class="select-options" id="new-equip-class-options" hidden></div>
+    </div>
     <div class="modal-actions">
       <button type="button" id="save-new-equipment-btn" class="btn">Добавить</button>
       <button type="button" id="cancel-new-equipment-btn" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-equipment-class" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Оборудование</p>
+    <h2>Добавить класс оборудования</h2>
+    <div class="field" id="field-new-equip-class-name">
+      <label class="field-label" for="new-equip-class-name-input">Название класса</label>
+      <input type="text" id="new-equip-class-name-input" placeholder="Например: Экструдер">
+    </div>
+    <div class="modal-actions">
+      <button type="button" id="save-new-equipment-class-btn" class="btn">Добавить</button>
+      <button type="button" id="cancel-new-equipment-class-btn" class="btn btn-secondary">Отмена</button>
     </div>
   </div>
 </div>
@@ -824,22 +861,23 @@
   var STORAGE_KEY = 'zhurnalSmenyDemo';
 
   var EQUIPMENT_OPTIONS = ['Станок 1', 'Станок 2', 'Станок 3'];
-  var MASTER_OPTIONS = ['Иванов', 'Петров', 'Сидоров'];
+  var MASTER_OPTIONS = [];
 
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
+      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [], customEquipmentClasses: [] };
       var parsed = JSON.parse(raw);
       return {
         activeShift: parsed.activeShift || null,
         history: parsed.history || [],
         carriedBreakdowns: parsed.carriedBreakdowns || [],
         customEquipment: parsed.customEquipment || [],
-        customMasters: parsed.customMasters || []
+        customMasters: parsed.customMasters || [],
+        customEquipmentClasses: parsed.customEquipmentClasses || []
       };
     } catch (e) {
-      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
+      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [], customEquipmentClasses: [] };
     }
   }
 
@@ -879,6 +917,10 @@
     return MASTER_OPTIONS.concat(state.customMasters);
   }
 
+  function getAllEquipmentClasses() {
+    return state.customEquipmentClasses.slice();
+  }
+
   function renderMasterChipOptions() {
     var row = document.querySelector('[data-chip-group="shiftMaster"]');
     var otherBtn = document.getElementById('shift-master-other-btn');
@@ -897,6 +939,16 @@
   function findEquipmentMarking(name) {
     var match = state.customEquipment.filter(function (e) { return e.name === name; })[0];
     return match ? match.marking : null;
+  }
+
+  function findEquipmentClass(name) {
+    var match = state.customEquipment.filter(function (e) { return e.name === name; })[0];
+    return match ? match.class : null;
+  }
+
+  function equipmentOptionLabel(name) {
+    var extra = [findEquipmentMarking(name), findEquipmentClass(name)].filter(Boolean).join(' · ');
+    return extra ? name + ' — ' + extra : name;
   }
 
   function breakdownCategoryLine(record) {
@@ -1013,9 +1065,6 @@
   function setFieldError(fieldEl) { fieldEl.classList.add('field-error'); }
 
   // ---------- Shift form ----------
-  var shiftNumberGroup = setupChipGroup(document, 'shiftNumber', function () {
-    clearFieldError(document.getElementById('field-shift-number'));
-  });
   renderMasterChipOptions();
   var shiftMasterGroup = setupChipGroup(document, 'shiftMaster', function (value) {
     clearFieldError(document.getElementById('field-shift-master'));
@@ -1030,27 +1079,24 @@
   var shiftStartInput = document.getElementById('shift-start-input');
 
   document.getElementById('start-shift-btn').addEventListener('click', function () {
-    shiftNumberGroup.reset();
     shiftMasterGroup.reset();
     shiftTypeGroup.reset();
     document.getElementById('shift-master-other-wrap').hidden = true;
     document.getElementById('shift-master-other').value = '';
     shiftStartInput.value = toDatetimeLocalValue(new Date());
-    ['field-shift-number', 'field-shift-master', 'field-shift-type'].forEach(function (id) {
+    ['field-shift-master', 'field-shift-type'].forEach(function (id) {
       clearFieldError(document.getElementById(id));
     });
     showScreen('shift-form');
   });
 
   document.getElementById('confirm-shift-btn').addEventListener('click', function () {
-    var number = shiftNumberGroup.get();
     var masterChip = shiftMasterGroup.get();
     var type = shiftTypeGroup.get();
     var master = masterChip === '__other' ? document.getElementById('shift-master-other').value.trim() : masterChip;
     var startAt = shiftStartInput.value;
 
     var valid = true;
-    if (!number) { setFieldError(document.getElementById('field-shift-number')); valid = false; }
     if (!master) { setFieldError(document.getElementById('field-shift-master')); valid = false; }
     if (!type) { setFieldError(document.getElementById('field-shift-type')); valid = false; }
     if (!startAt) { setFieldError(document.getElementById('field-shift-start')); valid = false; }
@@ -1058,7 +1104,6 @@
 
     state.activeShift = {
       id: uid(),
-      number: number,
       master: master,
       type: type,
       startAt: new Date(startAt).toISOString(),
@@ -1078,13 +1123,12 @@
     var otherBtn = document.getElementById('bd-equipment-other-btn');
     panel.querySelectorAll('.select-option[data-dynamic]').forEach(function (btn) { btn.remove(); });
     getAllEquipmentNames().forEach(function (name) {
-      var marking = findEquipmentMarking(name);
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'select-option';
       btn.setAttribute('data-dynamic', '1');
       btn.setAttribute('data-value', name);
-      btn.textContent = marking ? name + ' — ' + marking : name;
+      btn.textContent = equipmentOptionLabel(name);
       panel.insertBefore(btn, otherBtn);
     });
   }
@@ -1452,7 +1496,7 @@
 
   // ---------- Rendering: current shift ----------
   function shiftSummaryLine(shift) {
-    return 'Смена ' + shift.number + ' · ' + shift.type + ' · мастер ' + shift.master + ' · начата ' + formatDateTime(shift.startAt);
+    return shift.type + ' смена · мастер ' + shift.master + ' · начата ' + formatDateTime(shift.startAt);
   }
 
   function renderCurrentTab() {
@@ -1532,7 +1576,7 @@
       header.className = 'row-card shift-header';
       var title = document.createElement('div');
       title.className = 'row-title';
-      title.textContent = 'Смена ' + shift.number + ' · ' + shift.type + (shift.endedAt ? '' : ' · идёт сейчас');
+      title.textContent = shift.type + ' смена' + (shift.endedAt ? '' : ' · идёт сейчас');
       var sub = document.createElement('div');
       sub.className = 'row-sub';
       sub.textContent = formatDateTime(shift.startAt) + ' · мастер ' + shift.master + ' · поломок: ' + shift.breakdowns.length;
@@ -1590,6 +1634,48 @@
   }
 
   // ---------- Rendering: equipment ----------
+  function buildEquipmentRow(name, allBreakdowns) {
+    var items = allBreakdowns.filter(function (record) { return record.equipment === name; });
+    var totalMinutes = items.reduce(function (sum, record) {
+      return sum + (record.repairEnd ? minutesBetween(record.repairStart, record.repairEnd) : 0);
+    }, 0);
+
+    var row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'row-card equip-row';
+    var left = document.createElement('div');
+    var title = document.createElement('div');
+    title.className = 'row-title';
+    title.textContent = name;
+    left.appendChild(title);
+    var marking = findEquipmentMarking(name);
+    if (marking) {
+      var markingEl = document.createElement('div');
+      markingEl.className = 'row-sub';
+      markingEl.textContent = marking;
+      left.appendChild(markingEl);
+    }
+    var stats = document.createElement('div');
+    stats.className = 'equip-stats';
+    stats.textContent = items.length + ' поломок · ' + totalMinutes + ' мин простоя';
+    row.appendChild(left);
+    row.appendChild(stats);
+
+    row.addEventListener('click', function () {
+      if (items.length === 0) return;
+      showEquipmentHistory(name, items);
+    });
+
+    return row;
+  }
+
+  function appendEquipmentGroupTitle(container, text) {
+    var title = document.createElement('div');
+    title.className = 'equip-group-title';
+    title.textContent = text;
+    container.appendChild(title);
+  }
+
   function renderEquipment() {
     var container = document.getElementById('equipment-list');
     container.innerHTML = '';
@@ -1607,40 +1693,44 @@
       if (names.indexOf(record.equipment) === -1) names.push(record.equipment);
     });
 
-    names.forEach(function (name) {
-      var items = allBreakdowns.filter(function (record) { return record.equipment === name; });
-      var totalMinutes = items.reduce(function (sum, record) {
-        return sum + (record.repairEnd ? minutesBetween(record.repairStart, record.repairEnd) : 0);
-      }, 0);
+    var classes = getAllEquipmentClasses();
 
-      var row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'row-card equip-row';
-      var left = document.createElement('div');
-      var title = document.createElement('div');
-      title.className = 'row-title';
-      title.textContent = name;
-      left.appendChild(title);
-      var marking = findEquipmentMarking(name);
-      if (marking) {
-        var markingEl = document.createElement('div');
-        markingEl.className = 'row-sub';
-        markingEl.textContent = marking;
-        left.appendChild(markingEl);
-      }
-      var stats = document.createElement('div');
-      stats.className = 'equip-stats';
-      stats.textContent = items.length + ' поломок · ' + totalMinutes + ' мин простоя';
-      row.appendChild(left);
-      row.appendChild(stats);
-
-      row.addEventListener('click', function () {
-        if (items.length === 0) return;
-        showEquipmentHistory(name, items);
+    if (classes.length === 0) {
+      names.forEach(function (name) {
+        container.appendChild(buildEquipmentRow(name, allBreakdowns));
       });
+      return;
+    }
 
-      container.appendChild(row);
+    var grouped = {};
+    classes.forEach(function (cls) { grouped[cls] = []; });
+    var unclassified = [];
+    names.forEach(function (name) {
+      var cls = findEquipmentClass(name);
+      if (cls && grouped.hasOwnProperty(cls)) grouped[cls].push(name);
+      else unclassified.push(name);
     });
+
+    classes.forEach(function (cls) {
+      appendEquipmentGroupTitle(container, cls);
+      if (grouped[cls].length === 0) {
+        var note = document.createElement('p');
+        note.className = 'empty-note';
+        note.textContent = 'Пока нет оборудования этого класса.';
+        container.appendChild(note);
+      } else {
+        grouped[cls].forEach(function (name) {
+          container.appendChild(buildEquipmentRow(name, allBreakdowns));
+        });
+      }
+    });
+
+    if (unclassified.length) {
+      appendEquipmentGroupTitle(container, 'Без класса');
+      unclassified.forEach(function (name) {
+        container.appendChild(buildEquipmentRow(name, allBreakdowns));
+      });
+    }
   }
 
   var modalEquipmentList = document.getElementById('modal-equipment-list');
@@ -1692,9 +1782,26 @@
   var newEquipNameInput = document.getElementById('new-equip-name-input');
   var newEquipMarkingInput = document.getElementById('new-equip-marking-input');
 
+  function renderEquipmentClassSelectOptions() {
+    var panel = document.getElementById('new-equip-class-options');
+    panel.innerHTML = '';
+    getAllEquipmentClasses().forEach(function (name) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'select-option';
+      btn.setAttribute('data-value', name);
+      btn.textContent = name;
+      panel.appendChild(btn);
+    });
+  }
+
+  var newEquipClassGroup = setupSelectDropdown('new-equip-class-trigger', 'new-equip-class-options', 'new-equip-class-trigger-text', 'Не выбран', function () {});
+  renderEquipmentClassSelectOptions();
+
   document.getElementById('add-equipment-btn').addEventListener('click', function () {
     newEquipNameInput.value = '';
     newEquipMarkingInput.value = '';
+    newEquipClassGroup.reset();
     clearFieldError(document.getElementById('field-new-equip-name'));
     modalAddEquipment.hidden = false;
   });
@@ -1706,6 +1813,7 @@
   document.getElementById('save-new-equipment-btn').addEventListener('click', function () {
     var name = newEquipNameInput.value.trim();
     var marking = newEquipMarkingInput.value.trim();
+    var equipClass = newEquipClassGroup.get();
     var fieldEl = document.getElementById('field-new-equip-name');
 
     var exists = getAllEquipmentNames().some(function (existing) {
@@ -1718,11 +1826,46 @@
     }
     clearFieldError(fieldEl);
 
-    state.customEquipment.push({ name: name, marking: marking || null });
+    state.customEquipment.push({ name: name, marking: marking || null, class: equipClass || null });
     saveState();
     renderEquipmentSelectOptions();
     renderEquipment();
     modalAddEquipment.hidden = true;
+  });
+
+  // ---------- Add equipment class modal ----------
+  var modalAddEquipmentClass = document.getElementById('modal-add-equipment-class');
+  var newEquipClassNameInput = document.getElementById('new-equip-class-name-input');
+
+  document.getElementById('add-equipment-class-btn').addEventListener('click', function () {
+    newEquipClassNameInput.value = '';
+    clearFieldError(document.getElementById('field-new-equip-class-name'));
+    modalAddEquipmentClass.hidden = false;
+  });
+
+  document.getElementById('cancel-new-equipment-class-btn').addEventListener('click', function () {
+    modalAddEquipmentClass.hidden = true;
+  });
+
+  document.getElementById('save-new-equipment-class-btn').addEventListener('click', function () {
+    var name = newEquipClassNameInput.value.trim();
+    var fieldEl = document.getElementById('field-new-equip-class-name');
+
+    var exists = getAllEquipmentClasses().some(function (existing) {
+      return existing.toLowerCase() === name.toLowerCase();
+    });
+
+    if (!name || exists) {
+      setFieldError(fieldEl);
+      return;
+    }
+    clearFieldError(fieldEl);
+
+    state.customEquipmentClasses.push(name);
+    saveState();
+    renderEquipmentClassSelectOptions();
+    renderEquipment();
+    modalAddEquipmentClass.hidden = true;
   });
 
   // ---------- Export / backup ----------
@@ -1733,7 +1876,8 @@
       history: state.history,
       carriedBreakdowns: state.carriedBreakdowns,
       customEquipment: state.customEquipment,
-      customMasters: state.customMasters
+      customMasters: state.customMasters,
+      customEquipmentClasses: state.customEquipmentClasses
     };
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);

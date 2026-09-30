@@ -55,7 +55,7 @@
 
   label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
 
-  input[type="text"] {
+  input[type="text"], select {
     width: 100%;
     background: var(--bg-field);
     border: 1px solid rgba(255, 255, 255, 0.14);
@@ -122,7 +122,7 @@
 
   <div class="card">
     <h2>Мастера</h2>
-    <p class="hint">Уже есть по умолчанию: Иванов, Петров, Сидоров.</p>
+    <p class="hint">Список фамилий, которые будут доступны для выбора в журнале.</p>
     <div class="row">
       <div class="field">
         <label for="master-name-input">Фамилия</label>
@@ -132,6 +132,20 @@
     </div>
     <div id="master-status" class="status-msg"></div>
     <div class="list" id="master-list"></div>
+  </div>
+
+  <div class="card">
+    <h2>Классы оборудования</h2>
+    <p class="hint">Тип/категория станка — например «Экструдер», «Пресс». Необязательно для уже внесённого оборудования.</p>
+    <div class="row">
+      <div class="field">
+        <label for="equip-class-name-input">Название класса</label>
+        <input type="text" id="equip-class-name-input" placeholder="Например: Экструдер">
+      </div>
+      <button type="button" class="btn" id="add-equip-class-btn" style="align-self: flex-end;">Добавить</button>
+    </div>
+    <div id="equip-class-status" class="status-msg"></div>
+    <div class="list" id="equip-class-list"></div>
   </div>
 
   <div class="card">
@@ -146,6 +160,12 @@
         <label for="equip-marking-input">Маркировка</label>
         <input type="text" id="equip-marking-input" placeholder="Например: инв. №1234">
       </div>
+      <div class="field">
+        <label for="equip-class-select">Класс</label>
+        <select id="equip-class-select">
+          <option value="">Без класса</option>
+        </select>
+      </div>
       <button type="button" class="btn" id="add-equip-btn" style="align-self: flex-end;">Добавить</button>
     </div>
     <div id="equip-status" class="status-msg"></div>
@@ -156,23 +176,24 @@
 <script>
 (function () {
   var STORAGE_KEY = 'zhurnalSmenyDemo';
-  var MASTER_OPTIONS = ['Иванов', 'Петров', 'Сидоров'];
+  var MASTER_OPTIONS = [];
   var EQUIPMENT_OPTIONS = ['Станок 1', 'Станок 2', 'Станок 3'];
 
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
+      if (!raw) return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [], customEquipmentClasses: [] };
       var parsed = JSON.parse(raw);
       return {
         activeShift: parsed.activeShift || null,
         history: parsed.history || [],
         carriedBreakdowns: parsed.carriedBreakdowns || [],
         customEquipment: parsed.customEquipment || [],
-        customMasters: parsed.customMasters || []
+        customMasters: parsed.customMasters || [],
+        customEquipmentClasses: parsed.customEquipmentClasses || []
       };
     } catch (e) {
-      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [] };
+      return { activeShift: null, history: [], carriedBreakdowns: [], customEquipment: [], customMasters: [], customEquipmentClasses: [] };
     }
   }
 
@@ -200,7 +221,7 @@
     if (state.customMasters.length === 0) {
       var note = document.createElement('p');
       note.className = 'empty-note';
-      note.textContent = 'Пока ничего не добавлено сверх списка по умолчанию.';
+      note.textContent = 'Список пуст — добавьте первого мастера.';
       masterList.appendChild(note);
       return;
     }
@@ -246,6 +267,76 @@
     if (evt.key === 'Enter') document.getElementById('add-master-btn').click();
   });
 
+  // ---------- Equipment classes ----------
+  var equipClassNameInput = document.getElementById('equip-class-name-input');
+  var equipClassList = document.getElementById('equip-class-list');
+  var equipClassStatus = document.getElementById('equip-class-status');
+  var equipClassSelect = document.getElementById('equip-class-select');
+
+  function renderEquipmentClassSelectOptions() {
+    var current = equipClassSelect.value;
+    equipClassSelect.innerHTML = '<option value="">Без класса</option>';
+    state.customEquipmentClasses.forEach(function (name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      equipClassSelect.appendChild(opt);
+    });
+    if (state.customEquipmentClasses.indexOf(current) !== -1) equipClassSelect.value = current;
+  }
+
+  function renderEquipmentClasses() {
+    equipClassList.innerHTML = '';
+    if (state.customEquipmentClasses.length === 0) {
+      var note = document.createElement('p');
+      note.className = 'empty-note';
+      note.textContent = 'Пока ничего не добавлено.';
+      equipClassList.appendChild(note);
+      return;
+    }
+    state.customEquipmentClasses.forEach(function (name, index) {
+      var item = document.createElement('div');
+      item.className = 'list-item';
+      var label = document.createElement('span');
+      label.textContent = name;
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = 'Удалить';
+      del.addEventListener('click', function () {
+        state.customEquipmentClasses.splice(index, 1);
+        saveState();
+        renderEquipmentClasses();
+        renderEquipmentClassSelectOptions();
+      });
+      item.appendChild(label);
+      item.appendChild(del);
+      equipClassList.appendChild(item);
+    });
+  }
+
+  document.getElementById('add-equip-class-btn').addEventListener('click', function () {
+    var name = equipClassNameInput.value.trim();
+    if (!name) {
+      showStatus(equipClassStatus, 'Введите название класса.', 'error');
+      return;
+    }
+    var exists = state.customEquipmentClasses.some(function (existing) { return existing.toLowerCase() === name.toLowerCase(); });
+    if (exists) {
+      showStatus(equipClassStatus, 'Такой класс уже есть в списке.', 'error');
+      return;
+    }
+    state.customEquipmentClasses.push(name);
+    saveState();
+    equipClassNameInput.value = '';
+    showStatus(equipClassStatus, 'Добавлено: ' + name, 'ok');
+    renderEquipmentClasses();
+    renderEquipmentClassSelectOptions();
+  });
+
+  equipClassNameInput.addEventListener('keydown', function (evt) {
+    if (evt.key === 'Enter') document.getElementById('add-equip-class-btn').click();
+  });
+
   // ---------- Equipment ----------
   var equipNameInput = document.getElementById('equip-name-input');
   var equipMarkingInput = document.getElementById('equip-marking-input');
@@ -266,10 +357,11 @@
       item.className = 'list-item';
       var label = document.createElement('span');
       label.textContent = eq.name;
-      if (eq.marking) {
+      var metaText = [eq.marking, eq.class].filter(Boolean).join(' · ');
+      if (metaText) {
         var meta = document.createElement('span');
         meta.className = 'meta';
-        meta.textContent = eq.marking;
+        meta.textContent = metaText;
         label.appendChild(meta);
       }
       var del = document.createElement('button');
@@ -289,6 +381,7 @@
   document.getElementById('add-equip-btn').addEventListener('click', function () {
     var name = equipNameInput.value.trim();
     var marking = equipMarkingInput.value.trim();
+    var cls = equipClassSelect.value;
     if (!name) {
       showStatus(equipStatus, 'Введите название оборудования.', 'error');
       return;
@@ -299,10 +392,11 @@
       showStatus(equipStatus, 'Такое оборудование уже есть в списке.', 'error');
       return;
     }
-    state.customEquipment.push({ name: name, marking: marking || null });
+    state.customEquipment.push({ name: name, marking: marking || null, class: cls || null });
     saveState();
     equipNameInput.value = '';
     equipMarkingInput.value = '';
+    equipClassSelect.value = '';
     showStatus(equipStatus, 'Добавлено: ' + name, 'ok');
     renderEquipment();
   });
@@ -312,6 +406,8 @@
   });
 
   renderMasters();
+  renderEquipmentClasses();
+  renderEquipmentClassSelectOptions();
   renderEquipment();
 })();
 </script>
