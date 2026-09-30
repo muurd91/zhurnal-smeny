@@ -533,7 +533,7 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--text-muted);
+    color: var(--accent);
     font-weight: 600;
     margin-top: 10px;
   }
@@ -675,7 +675,7 @@
     <div class="tab-panel" id="tab-equipment" hidden>
       <div class="tab-actions-row">
         <button type="button" id="add-equipment-btn" class="btn">+ Добавить оборудование</button>
-        <button type="button" id="add-equipment-class-btn" class="btn btn-secondary">+ Добавить класс оборудования</button>
+        <button type="button" id="add-equipment-class-btn" class="btn">+ Добавить класс оборудования</button>
       </div>
       <div class="list" id="equipment-list"></div>
     </div>
@@ -1694,15 +1694,15 @@
       if (names.indexOf(record.equipment) === -1) names.push(record.equipment);
     });
 
-    if (names.length === 0) {
+    var classes = getAllEquipmentClasses();
+
+    if (names.length === 0 && classes.length === 0) {
       var emptyAll = document.createElement('p');
       emptyAll.className = 'empty-note';
       emptyAll.textContent = 'Оборудование ещё не добавлено.';
       container.appendChild(emptyAll);
       return;
     }
-
-    var classes = getAllEquipmentClasses();
 
     if (classes.length === 0) {
       names.forEach(function (name) {
