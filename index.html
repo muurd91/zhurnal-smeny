@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="data:,">
-<title>Журнал смены — учёт простоев без облака</title>
+<title>Учёт простоев — без облака и аккаунтов</title>
 <meta name="description" content="Планшет вместо журнала простоев на бумаге или в голове. Отмечаешь поломку прямо у станка — без облака и аккаунтов.">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://muurd91.github.io/zhurnal-smeny/">
-<meta property="og:title" content="Журнал смены — учёт простоев без облака">
+<meta property="og:title" content="Учёт простоев — без облака и аккаунтов">
 <meta property="og:description" content="Планшет вместо журнала простоев на бумаге или в голове. Отмечаешь поломку прямо у станка — без облака и аккаунтов.">
 <meta property="og:image" content="https://muurd91.github.io/zhurnal-smeny/images/cover.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Журнал смены — учёт простоев без облака">
+<meta name="twitter:title" content="Учёт простоев — без облака и аккаунтов">
 <meta name="twitter:description" content="Планшет вместо журнала простоев на бумаге или в голове. Отмечаешь поломку прямо у станка — без облака и аккаунтов.">
 <meta name="twitter:image" content="https://muurd91.github.io/zhurnal-smeny/images/cover.jpg">
 <style>
@@ -345,8 +345,8 @@
   <section class="zone" id="zone-breakdowns">
     <div class="zone-inner zone-inner--wide zone-grid">
       <div class="zone-text">
-        <h1>Журнал смены</h1>
-        <p class="descriptor">Простои, поломки и состояние оборудования — прямо во время смены.</p>
+        <h1>Учёт простоев</h1>
+        <p class="descriptor">Поломки, причины простоя и состояние оборудования — прямо во время смены.</p>
         <p class="tagline">Поломки на производстве — не редкость</p>
         <p class="lead">Станок встал, и полдня непонятно почему — так проходит смена за сменой на любом производстве. Где-то это износ детали, где-то ошибка оператора, где-то просто разболтался крепёж. Поломки — это не ЧП, это фон, с которым работает каждая смена.</p>
         <p>Проблема не в самих поломках — они будут всегда. Проблема в том, что через неделю никто не вспомнит, какой узел ломается чаще других и сколько смен на этом потеряно.</p>
@@ -369,7 +369,7 @@
         <p>Фиксация происходит прямо у станка, пока событие ещё свежо, а не восстанавливается вечером по памяти или с чужих слов.</p>
       </div>
       <div class="zone-photo">
-        <img src="images/planshet.jpg" alt="Мастер отмечает событие в журнале смены на планшете" width="800" height="1200" loading="lazy">
+        <img src="images/planshet.jpg" alt="Мастер отмечает поломку и простой на планшете" width="800" height="1200" loading="lazy">
       </div>
     </div>
   </section>
@@ -395,7 +395,7 @@
     <div class="zone-inner">
       <h2>Хотите попробовать на своей смене?</h2>
       <p>Пройдите демо прямо сейчас — вводите свои данные, отмечайте поломки, смотрите историю.</p>
-      <a class="btn cta-demo-btn" href="demo.html">Попробовать журнал смены</a>
+      <a class="btn cta-demo-btn" href="demo.html">Попробовать учёт простоев</a>
       <p class="cta-divider">Или оставьте контакт — вышлю минимальную версию, когда она будет готова к показу.</p>
       <form id="contact-form">
         <div>
@@ -431,7 +431,7 @@
   var TARGET_EMAIL = 'myrdoc911@gmail.com';
 
   function buildMailtoHref(name, contact, phone) {
-    var subject = encodeURIComponent('Журнал смены — хочу попробовать');
+    var subject = encodeURIComponent('Учёт простоев — хочу попробовать');
     var lines = ['Имя: ' + name, 'Как связаться: ' + contact];
     if (phone) lines.push('Телефон: ' + phone);
     var body = encodeURIComponent(lines.join('\n'));
