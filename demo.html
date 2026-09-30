@@ -860,7 +860,7 @@
 (function () {
   var STORAGE_KEY = 'zhurnalSmenyDemo';
 
-  var EQUIPMENT_OPTIONS = ['Станок 1', 'Станок 2', 'Станок 3'];
+  var EQUIPMENT_OPTIONS = [];
   var MASTER_OPTIONS = [];
 
   function loadState() {
@@ -1692,6 +1692,14 @@
     allBreakdowns.forEach(function (record) {
       if (names.indexOf(record.equipment) === -1) names.push(record.equipment);
     });
+
+    if (names.length === 0) {
+      var emptyAll = document.createElement('p');
+      emptyAll.className = 'empty-note';
+      emptyAll.textContent = 'Оборудование ещё не добавлено.';
+      container.appendChild(emptyAll);
+      return;
+    }
 
     var classes = getAllEquipmentClasses();
 

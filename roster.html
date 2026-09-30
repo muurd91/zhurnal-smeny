@@ -150,7 +150,7 @@
 
   <div class="card">
     <h2>Оборудование</h2>
-    <p class="hint">Уже есть по умолчанию: Станок 1, Станок 2, Станок 3.</p>
+    <p class="hint">Список станков, доступных для выбора в журнале.</p>
     <div class="row">
       <div class="field">
         <label for="equip-name-input">Название</label>
@@ -177,7 +177,7 @@
 (function () {
   var STORAGE_KEY = 'zhurnalSmenyDemo';
   var MASTER_OPTIONS = [];
-  var EQUIPMENT_OPTIONS = ['Станок 1', 'Станок 2', 'Станок 3'];
+  var EQUIPMENT_OPTIONS = [];
 
   function loadState() {
     try {
@@ -348,7 +348,7 @@
     if (state.customEquipment.length === 0) {
       var note = document.createElement('p');
       note.className = 'empty-note';
-      note.textContent = 'Пока ничего не добавлено сверх списка по умолчанию.';
+      note.textContent = 'Список пуст — добавьте первое оборудование.';
       equipList.appendChild(note);
       return;
     }
