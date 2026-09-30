@@ -1199,6 +1199,7 @@
       editingBreakdownId = null;
       document.getElementById('breakdown-modal-title').textContent = 'Новая поломка';
       bdStartInput.value = toDatetimeLocalValue(new Date());
+      bdOperatorInput.value = state.activeShift ? state.activeShift.master : '';
       bdInProgress.checked = true;
       bdEndField.hidden = true;
       bdClosedByField.hidden = true;
