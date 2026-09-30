@@ -385,6 +385,54 @@
   .select-option:hover, .select-option:focus-visible { background: var(--bg); outline: none; }
   .select-option.is-selected { color: var(--accent); font-weight: 600; }
 
+  .select-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    background: var(--bg-field);
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .select-group-header:hover, .select-group-header:focus-visible { background: var(--bg); outline: none; }
+
+  .select-group-count {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.82rem;
+    margin-left: auto;
+  }
+
+  .select-group-chevron {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+    flex: 0 0 auto;
+  }
+
+  .select-group-header.is-expanded .select-group-chevron { transform: rotate(180deg); }
+
+  .select-suboptions { background: var(--bg); }
+  .select-suboptions .select-option { background: var(--bg); padding-left: 28px; }
+  .select-suboptions .select-option:hover { background: var(--bg-field); }
+
+  .select-group-empty {
+    margin: 0;
+    padding: 10px 14px 10px 28px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    background: var(--bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
   .tabs {
     display: flex;
     gap: 6px;
@@ -946,11 +994,6 @@
     return match ? match.class : null;
   }
 
-  function equipmentOptionLabel(name) {
-    var extra = [findEquipmentMarking(name), findEquipmentClass(name)].filter(Boolean).join(' · ');
-    return extra ? name + ' — ' + extra : name;
-  }
-
   function breakdownCategoryLine(record) {
     return record.comment ? record.category + ': ' + record.comment : record.category;
   }
@@ -1025,6 +1068,17 @@
       }
     });
 
+    // Group headers (e.g. equipment classes) just expand/collapse their nested options.
+    optionsPanel.addEventListener('click', function (evt) {
+      var header = evt.target.closest('.select-group-header');
+      if (!header) return;
+      var body = header.nextElementSibling;
+      if (!body || !body.classList.contains('select-suboptions')) return;
+      var willOpen = body.hidden;
+      body.hidden = !willOpen;
+      header.classList.toggle('is-expanded', willOpen);
+    });
+
     // Delegated so options added after setup (e.g. newly registered equipment) work without re-binding.
     optionsPanel.addEventListener('click', function (evt) {
       var opt = evt.target.closest('.select-option');
@@ -1038,6 +1092,11 @@
       onChange(selected);
     });
 
+    function collapseAllGroups() {
+      optionsPanel.querySelectorAll('.select-suboptions').forEach(function (body) { body.hidden = true; });
+      optionsPanel.querySelectorAll('.select-group-header').forEach(function (header) { header.classList.remove('is-expanded'); });
+    }
+
     return {
       get: function () { return selected; },
       reset: function () {
@@ -1045,6 +1104,7 @@
         textEl.textContent = placeholder;
         textEl.classList.add('is-placeholder');
         options().forEach(function (o) { o.classList.remove('is-selected'); });
+        collapseAllGroups();
         close();
       },
       select: function (value) {
@@ -1057,6 +1117,14 @@
         });
         textEl.textContent = match ? match.textContent : placeholder;
         textEl.classList.toggle('is-placeholder', !match);
+        if (match) {
+          var body = match.closest('.select-suboptions');
+          if (body) {
+            body.hidden = false;
+            var header = body.previousElementSibling;
+            if (header && header.classList.contains('select-group-header')) header.classList.add('is-expanded');
+          }
+        }
       }
     };
   }
@@ -1118,19 +1186,74 @@
 
   // ---------- Breakdown modal ----------
   var modalBreakdown = document.getElementById('modal-breakdown');
+  function buildEquipmentSelectOption(name) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'select-option';
+    btn.setAttribute('data-dynamic', '1');
+    btn.setAttribute('data-value', name);
+    var marking = findEquipmentMarking(name);
+    btn.textContent = marking ? name + ' — ' + marking : name;
+    return btn;
+  }
+
   function renderEquipmentSelectOptions() {
     var panel = document.getElementById('bd-equipment-options');
     var otherBtn = document.getElementById('bd-equipment-other-btn');
-    panel.querySelectorAll('.select-option[data-dynamic]').forEach(function (btn) { btn.remove(); });
-    getAllEquipmentNames().forEach(function (name) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'select-option';
-      btn.setAttribute('data-dynamic', '1');
-      btn.setAttribute('data-value', name);
-      btn.textContent = equipmentOptionLabel(name);
-      panel.insertBefore(btn, otherBtn);
+    panel.querySelectorAll('[data-dynamic]').forEach(function (el) { el.remove(); });
+
+    var names = getAllEquipmentNames();
+    var classes = getAllEquipmentClasses();
+
+    if (classes.length === 0) {
+      names.forEach(function (name) {
+        panel.insertBefore(buildEquipmentSelectOption(name), otherBtn);
+      });
+      return;
+    }
+
+    function appendGroup(title, items) {
+      var header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'select-group-header';
+      header.setAttribute('data-dynamic', '1');
+      header.innerHTML = '<span>' + title + '</span><span class="select-group-count">' + items.length + '</span><span class="select-group-chevron">&#9662;</span>';
+
+      var body = document.createElement('div');
+      body.className = 'select-suboptions';
+      body.setAttribute('data-dynamic', '1');
+      body.hidden = true;
+
+      if (items.length === 0) {
+        var note = document.createElement('p');
+        note.className = 'select-group-empty';
+        note.textContent = 'Нет оборудования этого класса.';
+        body.appendChild(note);
+      } else {
+        items.forEach(function (name) {
+          body.appendChild(buildEquipmentSelectOption(name));
+        });
+      }
+
+      panel.insertBefore(header, otherBtn);
+      panel.insertBefore(body, otherBtn);
+    }
+
+    var grouped = {};
+    classes.forEach(function (cls) { grouped[cls] = []; });
+    var unclassified = [];
+    names.forEach(function (name) {
+      var cls = findEquipmentClass(name);
+      if (cls && grouped.hasOwnProperty(cls)) grouped[cls].push(name);
+      else unclassified.push(name);
     });
+
+    classes.forEach(function (cls) {
+      appendGroup(cls, grouped[cls]);
+    });
+    if (unclassified.length) {
+      appendGroup('Без класса', unclassified);
+    }
   }
 
   var bdEquipmentGroup = setupSelectDropdown('bd-equipment-trigger', 'bd-equipment-options', 'bd-equipment-trigger-text', 'Выберите оборудование', function (value) {
