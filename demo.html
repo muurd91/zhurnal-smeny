@@ -755,7 +755,11 @@
     </div>
 
     <div class="tab-panel" id="tab-history" hidden>
-      <button type="button" id="export-data-btn" class="btn" style="margin-bottom: 16px;">⭳ Скачать резервную копию (JSON)</button>
+      <div class="tab-actions-row">
+        <button type="button" id="export-data-btn" class="btn">⭳ Скачать резервную копию (JSON)</button>
+        <button type="button" id="import-data-btn" class="btn btn-secondary">⭱ Загрузить из файла</button>
+      </div>
+      <input type="file" id="import-data-file" accept="application/json,.json" hidden>
       <div class="list" id="history-list"></div>
     </div>
 
@@ -910,6 +914,18 @@
     <div class="modal-actions">
       <button type="button" id="confirm-delete-shift-btn" class="btn btn-danger">Да, удалить</button>
       <button type="button" id="cancel-delete-shift-btn" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-import-confirm" hidden>
+  <div class="modal-card">
+    <p class="eyebrow">Подтверждение</p>
+    <h2>Загрузить данные из файла?</h2>
+    <p>Все текущие данные в этом браузере — смены, история, оборудование, мастера — будут заменены содержимым файла. Отменить это действие будет нельзя.</p>
+    <div class="modal-actions">
+      <button type="button" id="confirm-import-btn" class="btn btn-danger">Да, заменить</button>
+      <button type="button" id="cancel-import-btn" class="btn btn-secondary">Отмена</button>
     </div>
   </div>
 </div>
@@ -2146,6 +2162,69 @@
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  });
+
+  // ---------- Import / restore ----------
+  var importDataInput = document.getElementById('import-data-file');
+  var modalImportConfirm = document.getElementById('modal-import-confirm');
+  var pendingImportPayload = null;
+
+  document.getElementById('import-data-btn').addEventListener('click', function () {
+    importDataInput.value = '';
+    importDataInput.click();
+  });
+
+  importDataInput.addEventListener('change', function () {
+    var file = importDataInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var parsed;
+      try {
+        parsed = JSON.parse(reader.result);
+      } catch (e) {
+        alert('Не удалось прочитать файл — это не похоже на резервную копию JSON.');
+        return;
+      }
+      if (!parsed || typeof parsed !== 'object' || !('history' in parsed)) {
+        alert('Файл не похож на резервную копию этого приложения.');
+        return;
+      }
+      pendingImportPayload = parsed;
+      modalImportConfirm.hidden = false;
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('confirm-import-btn').addEventListener('click', function () {
+    if (pendingImportPayload) {
+      state.activeShift = pendingImportPayload.activeShift || null;
+      state.history = pendingImportPayload.history || [];
+      state.carriedBreakdowns = pendingImportPayload.carriedBreakdowns || [];
+      state.customEquipment = pendingImportPayload.customEquipment || [];
+      state.customMasters = pendingImportPayload.customMasters || [];
+      state.customEquipmentClasses = pendingImportPayload.customEquipmentClasses || [];
+      saveState();
+
+      renderMasterChipOptions();
+      renderEquipmentSelectOptions();
+      renderEquipmentClassSelectOptions();
+
+      if (state.activeShift) {
+        renderMain();
+        showScreen('main');
+      } else {
+        showScreen('start');
+      }
+    }
+    pendingImportPayload = null;
+    modalImportConfirm.hidden = true;
+  });
+
+  document.getElementById('cancel-import-btn').addEventListener('click', function () {
+    pendingImportPayload = null;
+    modalImportConfirm.hidden = true;
+    importDataInput.value = '';
   });
 
   function renderMain() {
