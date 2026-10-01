@@ -143,6 +143,17 @@
   .status-msg { font-size: 0.85rem; margin-top: 10px; min-height: 1.2em; }
   .status-msg.error { color: var(--danger); }
   .status-msg.ok { color: var(--accent); }
+
+  .backup-folder-note { color: var(--text-muted); font-size: 0.82rem; margin: 10px 0 0; }
+  .backup-folder-note button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
@@ -155,9 +166,10 @@
     <h2>Резервная копия</h2>
     <p class="hint">Данные хранятся только в этом браузере. Чтобы перенести их в другой браузер или на другое устройство — скачай файл здесь и загрузи его там.</p>
     <div class="row">
-      <button type="button" class="btn" id="export-data-btn">⭳ Скачать резервную копию (JSON)</button>
+      <button type="button" class="btn" id="export-data-btn">⭳ Сохранить резервную копию</button>
       <button type="button" class="btn-outline" id="import-data-btn">⭱ Загрузить из файла</button>
     </div>
+    <p class="backup-folder-note" id="backup-folder-note" hidden></p>
     <input type="file" id="import-data-file" accept="application/json,.json" hidden>
     <div id="backup-status" class="status-msg"></div>
   </div>
@@ -501,8 +513,8 @@
   var backupStatus = document.getElementById('backup-status');
   var importDataInput = document.getElementById('import-data-file');
 
-  document.getElementById('export-data-btn').addEventListener('click', function () {
-    var payload = {
+  function buildBackupPayload() {
+    return {
       exportedAt: new Date().toISOString(),
       activeShift: state.activeShift,
       history: state.history,
@@ -511,16 +523,137 @@
       customMasters: state.customMasters,
       customEquipmentClasses: state.customEquipmentClasses
     };
+  }
+
+  function backupFileName() {
+    var stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    return 'zhurnal-smeny-' + stamp + '.json';
+  }
+
+  function downloadBackupBlob(payload) {
     var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
-    var stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
     var link = document.createElement('a');
     link.href = url;
-    link.download = 'zhurnal-smeny-' + stamp + '.json';
+    link.download = backupFileName();
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  // ---------- Remembering the backup folder (File System Access API) ----------
+  var HANDLE_DB_NAME = 'zhurnalSmenyFiles';
+  var HANDLE_STORE_NAME = 'handles';
+  var HANDLE_KEY = 'backupDir';
+
+  function openHandleDb() {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open(HANDLE_DB_NAME, 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore(HANDLE_STORE_NAME); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  function getSavedDirHandle() {
+    return openHandleDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(HANDLE_STORE_NAME, 'readonly');
+        var req = tx.objectStore(HANDLE_STORE_NAME).get(HANDLE_KEY);
+        req.onsuccess = function () { resolve(req.result || null); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function saveDirHandle(handle) {
+    return openHandleDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(HANDLE_STORE_NAME, 'readwrite');
+        tx.objectStore(HANDLE_STORE_NAME).put(handle, HANDLE_KEY);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
+  function clearSavedDirHandle() {
+    return openHandleDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(HANDLE_STORE_NAME, 'readwrite');
+        tx.objectStore(HANDLE_STORE_NAME).delete(HANDLE_KEY);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
+  function ensureDirPermission(handle) {
+    return handle.queryPermission({ mode: 'readwrite' }).then(function (status) {
+      if (status === 'granted') return true;
+      return handle.requestPermission({ mode: 'readwrite' }).then(function (status2) {
+        return status2 === 'granted';
+      });
+    });
+  }
+
+  var backupFolderNote = document.getElementById('backup-folder-note');
+
+  function showBackupFolderNote(handle) {
+    if (!handle) {
+      backupFolderNote.hidden = true;
+      return;
+    }
+    backupFolderNote.hidden = false;
+    backupFolderNote.textContent = 'Копии сохраняются в папку «' + handle.name + '». ';
+    var changeBtn = document.createElement('button');
+    changeBtn.type = 'button';
+    changeBtn.textContent = 'Сменить папку';
+    changeBtn.addEventListener('click', function () {
+      clearSavedDirHandle().then(function () { showBackupFolderNote(null); });
+    });
+    backupFolderNote.appendChild(changeBtn);
+  }
+
+  function refreshBackupFolderNote() {
+    if (!window.showDirectoryPicker) return;
+    getSavedDirHandle().then(function (handle) {
+      if (!handle) { showBackupFolderNote(null); return; }
+      handle.queryPermission({ mode: 'readwrite' }).then(function (status) {
+        showBackupFolderNote(status === 'granted' ? handle : null);
+      });
+    }).catch(function () { showBackupFolderNote(null); });
+  }
+
+  refreshBackupFolderNote();
+
+  async function saveBackupToChosenFolder(payload) {
+    var handle = await getSavedDirHandle();
+    var ready = handle ? await ensureDirPermission(handle) : false;
+    if (!ready) {
+      handle = await window.showDirectoryPicker({ id: 'zhurnal-smeny-backups', mode: 'readwrite', startIn: 'desktop' });
+      var granted = await ensureDirPermission(handle);
+      if (!granted) throw new Error('no-permission');
+    }
+    var fileHandle = await handle.getFileHandle(backupFileName(), { create: true });
+    var writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(payload, null, 2));
+    await writable.close();
+    try { await saveDirHandle(handle); } catch (e) { /* backup already written; remembering the folder is best-effort */ }
+    showBackupFolderNote(handle);
+  }
+
+  document.getElementById('export-data-btn').addEventListener('click', function () {
+    var payload = buildBackupPayload();
+    if (!window.showDirectoryPicker) {
+      downloadBackupBlob(payload);
+      return;
+    }
+    saveBackupToChosenFolder(payload).catch(function (err) {
+      if (err && err.name === 'AbortError') return;
+      downloadBackupBlob(payload);
+    });
   });
 
   document.getElementById('import-data-btn').addEventListener('click', function () {
