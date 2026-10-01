@@ -515,6 +515,20 @@
 
   .row-sub { color: var(--text-muted); font-size: 0.85rem; }
 
+  .row-sub-indent { margin-left: 14px; margin-top: 2px; }
+
+  .row-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .row-bottom .badge { margin-top: 0; }
+
+  .row-closed-by { color: var(--text-muted); font-size: 0.85rem; }
+
   .shift-header { position: relative; padding-right: 34px; }
 
   .shift-chevron {
@@ -1694,12 +1708,27 @@
       var row = document.createElement('button');
       row.type = 'button';
       row.className = 'row-card';
+
       var title = document.createElement('div');
       title.className = 'row-title';
       title.textContent = record.equipment + ' — ' + breakdownCategoryLine(record);
-      var sub = document.createElement('div');
-      sub.className = 'row-sub';
-      sub.textContent = 'Начало ремонта: ' + formatDateTime(record.repairStart) + ' · оператор ' + record.operator;
+      row.appendChild(title);
+
+      var startLine = document.createElement('div');
+      startLine.className = 'row-sub row-sub-indent';
+      startLine.textContent = 'Начало ремонта: ' + formatDateTime(record.repairStart);
+      row.appendChild(startLine);
+
+      if (record.repairEnd) {
+        var endLine = document.createElement('div');
+        endLine.className = 'row-sub row-sub-indent';
+        endLine.textContent = 'Конец ремонта: ' + formatDateTime(record.repairEnd);
+        row.appendChild(endLine);
+      }
+
+      var bottomRow = document.createElement('div');
+      bottomRow.className = 'row-bottom';
+
       var badge = document.createElement('span');
       if (record.repairEnd) {
         badge.className = 'badge badge-done';
@@ -1708,10 +1737,16 @@
         badge.className = 'badge badge-progress';
         badge.textContent = 'В ремонте';
       }
-      row.appendChild(title);
-      row.appendChild(sub);
-      row.appendChild(document.createElement('br'));
-      row.appendChild(badge);
+      bottomRow.appendChild(badge);
+
+      if (record.repairEnd) {
+        var closedByEl = document.createElement('span');
+        closedByEl.className = 'row-closed-by';
+        closedByEl.textContent = record.closedBy;
+        bottomRow.appendChild(closedByEl);
+      }
+
+      row.appendChild(bottomRow);
 
       row.addEventListener('click', function () {
         if (record.repairEnd) {
