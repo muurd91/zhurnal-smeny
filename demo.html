@@ -217,6 +217,12 @@
     border-color: var(--danger);
   }
 
+  .field-error-msg {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin: 6px 0 0;
+  }
+
   .datetime-row {
     display: flex;
     gap: 8px;
@@ -815,6 +821,7 @@
         <input type="datetime-local" id="bd-end-input">
         <button type="button" class="datetime-confirm" data-target="bd-end-input" aria-label="Подтвердить дату и время">&#10003;</button>
       </div>
+      <p class="field-error-msg" id="bd-end-order-error" hidden>Окончание ремонта не может быть раньше его начала.</p>
     </div>
 
     <div class="field" id="field-bd-closed-by" hidden>
@@ -1311,8 +1318,11 @@
   bdInProgress.addEventListener('change', function () {
     bdEndField.hidden = bdInProgress.checked;
     bdClosedByField.hidden = bdInProgress.checked;
-    if (!bdInProgress.checked && !bdEndInput.value) {
-      bdEndInput.value = toDatetimeLocalValue(new Date());
+    if (!bdInProgress.checked) {
+      if (!bdEndInput.value) bdEndInput.value = toDatetimeLocalValue(new Date());
+      bdClosedByInput.value = bdOperatorInput.value;
+      clearFieldError(bdEndField);
+      document.getElementById('bd-end-order-error').hidden = true;
     }
   });
 
@@ -1330,6 +1340,7 @@
     bdOperatorInput.value = '';
     bdEndInput.value = '';
     bdClosedByInput.value = '';
+    document.getElementById('bd-end-order-error').hidden = true;
 
     if (existing) {
       editingBreakdownId = existing.id;
@@ -1381,12 +1392,23 @@
     var end = bdEndInput.value;
     var closedBy = bdClosedByInput.value.trim();
 
+    var bdEndOrderError = document.getElementById('bd-end-order-error');
+    ['field-bd-equipment', 'field-bd-category', 'field-bd-start', 'field-bd-operator', 'field-bd-end', 'field-bd-closed-by'].forEach(function (id) {
+      clearFieldError(document.getElementById(id));
+    });
+    bdEndOrderError.hidden = true;
+
     var valid = true;
     if (!equipment) { setFieldError(document.getElementById('field-bd-equipment')); valid = false; }
     if (!category) { setFieldError(document.getElementById('field-bd-category')); valid = false; }
     if (!start) { setFieldError(document.getElementById('field-bd-start')); valid = false; }
     if (!operator) { setFieldError(document.getElementById('field-bd-operator')); valid = false; }
     if (!inProgress && !end) { setFieldError(bdEndField); valid = false; }
+    else if (!inProgress && end && start && new Date(end) < new Date(start)) {
+      setFieldError(bdEndField);
+      bdEndOrderError.hidden = false;
+      valid = false;
+    }
     if (!inProgress && !closedBy) { setFieldError(bdClosedByField); valid = false; }
     if (!valid) return;
 
