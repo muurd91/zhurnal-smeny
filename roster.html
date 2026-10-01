@@ -81,21 +81,6 @@
 
   .btn:hover { filter: brightness(1.08); }
 
-  .btn-outline {
-    background: transparent;
-    color: var(--text);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-weight: 600;
-    border-radius: var(--radius-lg);
-    padding: 11px 20px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    white-space: nowrap;
-    height: 42px;
-  }
-
-  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-
   .list { display: grid; gap: 8px; margin-top: 16px; }
 
   .list-item {
@@ -167,7 +152,7 @@
     <p class="hint">Данные хранятся только в этом браузере. Чтобы перенести их в другой браузер или на другое устройство — скачай файл здесь и загрузи его там.</p>
     <div class="row">
       <button type="button" class="btn" id="export-data-btn">⭳ Сохранить резервную копию</button>
-      <button type="button" class="btn-outline" id="import-data-btn">⭱ Загрузить из файла</button>
+      <button type="button" class="btn" id="import-data-btn">⭱ Загрузить из файла</button>
     </div>
     <p class="backup-folder-note" id="backup-folder-note" hidden></p>
     <input type="file" id="import-data-file" accept="application/json,.json" hidden>
